@@ -11,38 +11,27 @@ import org.jetbrains.exposed.sql.transactions.transaction
 object DatabaseFactory {
 
     fun init(
-        jdbcUrl: String = "jdbc:postgresql://localhost:5432/spotify_db",
+        jdbcUrl: String,
         driverClassName: String = "org.postgresql.Driver",
-        username: String = "postgres",
-        password: String = "postgres"
+        username: String,
+        password: String
     ) {
-
         val config = HikariConfig().apply {
             this.jdbcUrl = jdbcUrl
             this.driverClassName = driverClassName
             this.username = username
             this.password = password
-
-
             maximumPoolSize = 10
             isAutoCommit = false
-            transactionIsolation = "TRANSACTION_REPEATABLE_READ"  /
-
+            transactionIsolation = "TRANSACTION_REPEATABLE_READ"
             validate()
         }
 
-
         val dataSource = HikariDataSource(config)
-
         Database.connect(dataSource)
 
         transaction {
-            SchemaUtils.create(
-                Users,
-                Artists,
-                Albums,
-                Tracks
-            )
+            SchemaUtils.create(Users, Artists, Albums, Tracks)
         }
 
         println("Base de datos inicializada correctamente")
