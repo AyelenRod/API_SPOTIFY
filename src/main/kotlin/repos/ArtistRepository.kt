@@ -15,24 +15,29 @@ object ArtistRepository {
         image = row[Artists.image]
     )
 
-    suspend fun create(artist: Artist): Artist = dbQuery {
+    // MODIFICADO: Crea el artista usando los parámetros del servicio
+    suspend fun createArtist(name: String, genre: String, imageUrl: String): Artist = dbQuery {
+        val newId = UUID.randomUUID()
         Artists.insert {
-            it[id] = artist.id
-            it[name] = artist.name
-            it[genre] = artist.genre
-            it[image] = artist.image
+            it[id] = newId
+            it[Artists.name] = name
+            it[Artists.genre] = genre
+            it[image] = imageUrl // Guarda la URL de S3
         }
-        artist
+
+        Artists.selectAll()
+            .where { Artists.id eq newId }
+            .map { resultRowToArtist(it) }
+            .single()
     }
 
-    suspend fun findById(id: UUID): Artist? = dbQuery {
+    // CORREGIDO: Renombrado a getArtistById
+    suspend fun getArtistById(id: UUID): Artist? = dbQuery {
         Artists.selectAll()
             .where { Artists.id eq id }
             .map { resultRowToArtist(it) }
             .singleOrNull()
     }
 
-    suspend fun getAll(): List<Artist> = dbQuery {
-        Artists.selectAll().map { resultRowToArtist(it) }
-    }
+    // (Funciones findById/create/getAll anteriores eliminadas o renombradas)
 }

@@ -19,31 +19,36 @@ object TrackRepository {
         artistId = row[Tracks.artistId]
     )
 
-    suspend fun create(track: Track): Track = dbQuery {
+    // MODIFICADO: Crea la pista usando los parámetros del servicio
+    suspend fun createTrack(name: String, albumId: UUID, duration: Long, artistId: UUID, previewUrl: String): Track = dbQuery {
+        val newId = UUID.randomUUID()
         Tracks.insert {
-            it[id] = track.id
-            it[name] = track.name
-            it[duration] = track.duration
-            it[previewUrl] = track.previewUrl
-            it[albumId] = track.albumId
-            it[artistId] = track.artistId
+            it[id] = newId
+            it[Tracks.name] = name
+            it[Tracks.duration] = duration
+            it[Tracks.previewUrl] = previewUrl // Guarda la URL de S3
+            it[Tracks.albumId] = albumId
+            it[Tracks.artistId] = artistId
         }
-        track
+
+        Tracks.selectAll()
+            .where { Tracks.id eq newId }
+            .map { resultRowToTrack(it) }
+            .single()
     }
 
-    suspend fun findById(id: UUID): Track? = dbQuery {
+    // CORREGIDO: Renombrado a getTrackById
+    suspend fun getTrackById(id: UUID): Track? = dbQuery {
         Tracks.selectAll()
             .where { Tracks.id eq id }
             .map { resultRowToTrack(it) }
             .singleOrNull()
     }
 
-    suspend fun getAll(): List<Track> = dbQuery {
-        Tracks.selectAll().map { resultRowToTrack(it) }
-    }
-
-    suspend fun search(query: String): List<Track> = dbQuery {
+    // CORREGIDO: Renombrado a searchTracksByName (aunque la implementación busca en 3 tablas)
+    suspend fun searchTracksByName(query: String): List<Track> = dbQuery {
         val q = query.lowercase()
+        // Asegúrate de que Artists y Albums estén en scope para el innerJoin
         (Tracks innerJoin Artists innerJoin Albums)
             .selectAll()
             .where {
@@ -53,4 +58,6 @@ object TrackRepository {
             }
             .map { resultRowToTrack(it) }
     }
+
+    // (Funciones findById/create/getAll anteriores eliminadas o renombradas)
 }

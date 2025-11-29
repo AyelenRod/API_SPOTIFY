@@ -8,6 +8,9 @@ import com.musicapp.routes.authRouting
 import com.musicapp.routes.contentRouting
 import com.musicapp.services.ContentService
 import com.musicapp.services.S3Service
+import com.musicapp.repos.ArtistRepository // <--- Importación necesaria
+import com.musicapp.repos.AlbumRepository // <--- Importación necesaria
+import com.musicapp.repos.TrackRepository // <--- Importación necesaria
 import io.ktor.http.*
 import io.ktor.serialization.jackson.*
 import io.ktor.server.application.*
@@ -61,7 +64,18 @@ fun Application.module() {
     }
     println("AWS S3 configurado")
 
-    val contentService = ContentService(s3Service)
+    // MODIFICACION: Inicializar repositorios para inyección
+    val artistRepository = ArtistRepository
+    val albumRepository = AlbumRepository
+    val trackRepository = TrackRepository
+
+    // MODIFICACION: Pasar los repositorios al ContentService
+    val contentService = ContentService(
+        s3Service = s3Service,
+        artistRepository = artistRepository,
+        albumRepository = albumRepository,
+        trackRepository = trackRepository
+    )
 
     install(ContentNegotiation) {
         jackson {
@@ -93,7 +107,7 @@ fun Application.module() {
 
     routing {
         authRouting()
-      contentRouting(contentService)
+        contentRouting(contentService)
     }
     println("Rutas configuradas")
 

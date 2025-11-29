@@ -13,6 +13,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
 fun Route.contentRouting(contentService: ContentService) {
+
     // Endpoint público de búsqueda de canciones
     get("/search") {
         val query = call.request.queryParameters["q"]
@@ -50,26 +51,30 @@ fun Route.contentRouting(contentService: ContentService) {
                                 "name" -> name = part.value
                                 "genre" -> genre = part.value
                             }
+                            part.dispose() // Descartar inmediatamente la parte del formulario
                         }
                         is PartData.FileItem -> {
                             if (part.name == "image") {
+                                // MODIFICADO: Leer el stream de bytes inmediatamente
                                 imageBytes = part.streamProvider().readBytes()
                                 imageFileName = part.originalFileName
                                 imageContentType = part.contentType
                             }
+                            part.dispose() // Descartar inmediatamente la parte del archivo después de leerla
                         }
-                        else -> {}
+                        else -> {
+                            part.dispose()
+                        }
                     }
-                    // IMPORTANTE: Se elimina part.dispose() aquí dentro del loop
                 }
-                multipart.dispose()
+                // Se elimina multipart.dispose() que generaba error de referencia.
 
                 if (name == null || genre == null || imageBytes == null || imageFileName == null) {
                     return@post call.respond(HttpStatusCode.BadRequest, "Missing name, genre, or image file")
                 }
 
                 try {
-                    // MODIFICACION: Pasar los bytes y el nombre del archivo al servicio
+                    // LLAMADA ACTUALIZADA: Usando ByteArray y nombre de archivo
                     val newArtist = contentService.createArtist(
                         name!!,
                         genre!!,
@@ -99,7 +104,6 @@ fun Route.contentRouting(contentService: ContentService) {
                 var name: String? = null
                 var artistId: String? = null
                 var year: String? = null
-                // MODIFICACION: Almacenar los bytes y el nombre del archivo
                 var albumArtBytes: ByteArray? = null
                 var albumArtFileName: String? = null
                 var albumArtContentType: ContentType? = null
@@ -112,25 +116,30 @@ fun Route.contentRouting(contentService: ContentService) {
                                 "artistId" -> artistId = part.value
                                 "year" -> year = part.value
                             }
+                            part.dispose()
                         }
                         is PartData.FileItem -> {
                             if (part.name == "albumArt") {
-                                // MODIFICACION: Leer el stream inmediatamente
+                                // MODIFICADO: Leer el stream de bytes inmediatamente
                                 albumArtBytes = part.streamProvider().readBytes()
                                 albumArtFileName = part.originalFileName
                                 albumArtContentType = part.contentType
                             }
+                            part.dispose()
                         }
-                        else -> {}
+                        else -> {
+                            part.dispose()
+                        }
                     }
                 }
-                multipart.dispose()
+                // Se elimina multipart.dispose()
 
                 if (name == null || artistId == null || year == null || albumArtBytes == null || albumArtFileName == null) {
                     return@post call.respond(HttpStatusCode.BadRequest, "Missing name, artistId, year, or albumArt file")
                 }
 
                 try {
+                    // LLAMADA ACTUALIZADA
                     val newAlbum = contentService.createAlbum(
                         name!!,
                         artistId!!,
@@ -174,24 +183,30 @@ fun Route.contentRouting(contentService: ContentService) {
                                 "artistId" -> artistId = part.value
                                 "duration" -> duration = part.value
                             }
+                            part.dispose()
                         }
                         is PartData.FileItem -> {
                             if (part.name == "preview") {
+                                // MODIFICADO: Leer el stream de bytes inmediatamente
                                 previewBytes = part.streamProvider().readBytes()
                                 previewFileName = part.originalFileName
                                 previewContentType = part.contentType
                             }
+                            part.dispose()
                         }
-                        else -> {}
+                        else -> {
+                            part.dispose()
+                        }
                     }
                 }
-                multipart.dispose()
+                // Se elimina multipart.dispose()
 
                 if (name == null || albumId == null || artistId == null || duration == null || previewBytes == null || previewFileName == null) {
                     return@post call.respond(HttpStatusCode.BadRequest, "Missing name, albumId, artistId, duration, or preview file")
                 }
 
                 try {
+                    // LLAMADA ACTUALIZADA
                     val newTrack = contentService.createTrack(
                         name!!,
                         albumId!!,
@@ -209,4 +224,3 @@ fun Route.contentRouting(contentService: ContentService) {
         }
     }
 }
-
