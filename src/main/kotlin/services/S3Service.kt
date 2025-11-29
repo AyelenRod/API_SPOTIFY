@@ -7,8 +7,12 @@ import io.ktor.http.content.*
 import io.ktor.server.config.*
 
 class S3Service(config: ApplicationConfig) {
-    private val bucketName: String = config.property("aws.s3.bucketName").getString()
-    private val region: String = config.property("aws.s3.region").getString()
+    // Lee bucketName directamente del bloque 's3'
+    private val bucketName: String = config.config("s3").property("bucketName").getString()
+
+    //Lee region directamente del bloque 'aws'
+    private val region: String = config.config("aws").property("region").getString()
+
     private val s3Client: S3Client = S3Client {
         this.region = this@S3Service.region
     }

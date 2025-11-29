@@ -4,6 +4,7 @@ import com.musicapp.database.DatabaseFactory.dbQuery
 import com.musicapp.database.Users
 import com.musicapp.models.User
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.mindrot.jbcrypt.BCrypt
 import java.util.*
 
@@ -22,7 +23,7 @@ object UserRepository {
             val hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt(12))
 
             Users.insert {
-                it[id] = newId // CORRECCIÓN: Pasar UUID directamente
+                it[id] = newId
                 it[Users.username] = username
                 it[Users.password] = hashedPassword
                 it[Users.role] = role
@@ -40,14 +41,14 @@ object UserRepository {
         }
     }
 
-    suspend fun findById(id: UUID): User? = dbQuery {
-        Users.select { Users.id eq id }
+    suspend fun findByUsername(username: String): User? = dbQuery {
+        Users.select { Users.username eq username }
             .map { resultRowToUser(it) }
             .singleOrNull()
     }
 
     suspend fun findById(id: UUID): User? = dbQuery {
-        Users.select { Users.id eq id.toString() }
+        Users.select { Users.id eq id }
             .map { resultRowToUser(it) }
             .singleOrNull()
     }
@@ -62,11 +63,11 @@ object UserRepository {
     }
 
     suspend fun deleteUser(id: UUID): Boolean = dbQuery {
-        Users.deleteWhere { Users.id eq id.toString() } > 0
+        Users.deleteWhere { Users.id eq id } > 0
     }
 
     suspend fun updateUserRole(id: UUID, newRole: String): Boolean = dbQuery {
-        Users.update({ Users.id eq id.toString() }) {
+        Users.update({ Users.id eq id }) {
             it[role] = newRole
         } > 0
     }
