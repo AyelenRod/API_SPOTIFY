@@ -3,7 +3,6 @@ package com.musicapp.services
 import aws.sdk.kotlin.services.s3.S3Client
 import aws.sdk.kotlin.services.s3.model.PutObjectRequest
 import aws.smithy.kotlin.runtime.content.ByteStream
-import io.ktor.http.content.*
 import io.ktor.server.config.*
 import io.ktor.utils.io.*
 
@@ -20,10 +19,9 @@ class S3Service(config: ApplicationConfig) {
 
     private val bucketBaseUrl = "https://$bucketName.s3.$region.amazonaws.com/"
 
-    suspend fun uploadFile(part: PartData.FileItem, fileKey: String): String {
-        val fileBytes = part.streamProvider().readBytes()
+    suspend fun uploadFile(fileBytes: ByteArray, fileKey: String, contentType: String?): String {
 
-        // Verificar que el archivo no esté vacío
+        // La verificación de vacío sigue siendo válida.
         if (fileBytes.isEmpty()) {
             throw IllegalStateException("El archivo está vacío")
         }
@@ -33,7 +31,7 @@ class S3Service(config: ApplicationConfig) {
         val request = PutObjectRequest {
             bucket = bucketName
             key = fileKey
-            contentType = part.contentType?.toString() ?: "application/octet-stream"
+            this.contentType = contentType ?: "application/octet-stream"
             body = ByteStream.fromBytes(fileBytes)
         }
 

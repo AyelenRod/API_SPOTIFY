@@ -39,7 +39,9 @@ fun Route.contentRouting(contentService: ContentService) {
                 val multipart = call.receiveMultipart()
                 var name: String? = null
                 var genre: String? = null
-                var imagePart: PartData.FileItem? = null
+                var imageBytes: ByteArray? = null
+                var imageFileName: String? = null
+                var imageContentType: ContentType? = null
 
                 multipart.forEachPart { part ->
                     when (part) {
@@ -50,19 +52,31 @@ fun Route.contentRouting(contentService: ContentService) {
                             }
                         }
                         is PartData.FileItem -> {
-                            if (part.name == "image") imagePart = part
+                            if (part.name == "image") {
+                                imageBytes = part.streamProvider().readBytes()
+                                imageFileName = part.originalFileName
+                                imageContentType = part.contentType
+                            }
                         }
                         else -> {}
                     }
-                    part.dispose()
+                    // IMPORTANTE: Se elimina part.dispose() aquí dentro del loop
                 }
+                multipart.dispose()
 
-                if (name == null || genre == null || imagePart == null) {
+                if (name == null || genre == null || imageBytes == null || imageFileName == null) {
                     return@post call.respond(HttpStatusCode.BadRequest, "Missing name, genre, or image file")
                 }
 
                 try {
-                    val newArtist = contentService.createArtist(name!!, genre!!, imagePart!!)
+                    // MODIFICACION: Pasar los bytes y el nombre del archivo al servicio
+                    val newArtist = contentService.createArtist(
+                        name!!,
+                        genre!!,
+                        imageBytes!!,
+                        imageFileName!!,
+                        imageContentType?.toString()
+                    )
                     call.respond(HttpStatusCode.Created, newArtist)
                 } catch (e: Exception) {
                     call.respond(HttpStatusCode.InternalServerError, "Error creating artist: ${e.message}")
@@ -85,7 +99,10 @@ fun Route.contentRouting(contentService: ContentService) {
                 var name: String? = null
                 var artistId: String? = null
                 var year: String? = null
-                var albumArtPart: PartData.FileItem? = null
+                // MODIFICACION: Almacenar los bytes y el nombre del archivo
+                var albumArtBytes: ByteArray? = null
+                var albumArtFileName: String? = null
+                var albumArtContentType: ContentType? = null
 
                 multipart.forEachPart { part ->
                     when (part) {
@@ -97,19 +114,31 @@ fun Route.contentRouting(contentService: ContentService) {
                             }
                         }
                         is PartData.FileItem -> {
-                            if (part.name == "albumArt") albumArtPart = part
+                            if (part.name == "albumArt") {
+                                // MODIFICACION: Leer el stream inmediatamente
+                                albumArtBytes = part.streamProvider().readBytes()
+                                albumArtFileName = part.originalFileName
+                                albumArtContentType = part.contentType
+                            }
                         }
                         else -> {}
                     }
-                    part.dispose()
                 }
+                multipart.dispose()
 
-                if (name == null || artistId == null || year == null || albumArtPart == null) {
+                if (name == null || artistId == null || year == null || albumArtBytes == null || albumArtFileName == null) {
                     return@post call.respond(HttpStatusCode.BadRequest, "Missing name, artistId, year, or albumArt file")
                 }
 
                 try {
-                    val newAlbum = contentService.createAlbum(name!!, artistId!!, year!!.toInt(), albumArtPart!!)
+                    val newAlbum = contentService.createAlbum(
+                        name!!,
+                        artistId!!,
+                        year!!.toInt(),
+                        albumArtBytes!!,
+                        albumArtFileName!!,
+                        albumArtContentType?.toString()
+                    )
                     call.respond(HttpStatusCode.Created, newAlbum)
                 } catch (e: Exception) {
                     call.respond(HttpStatusCode.InternalServerError, "Error creating album: ${e.message}")
@@ -132,7 +161,9 @@ fun Route.contentRouting(contentService: ContentService) {
                 var albumId: String? = null
                 var artistId: String? = null
                 var duration: String? = null
-                var previewPart: PartData.FileItem? = null
+                var previewBytes: ByteArray? = null
+                var previewFileName: String? = null
+                var previewContentType: ContentType? = null
 
                 multipart.forEachPart { part ->
                     when (part) {
@@ -145,19 +176,31 @@ fun Route.contentRouting(contentService: ContentService) {
                             }
                         }
                         is PartData.FileItem -> {
-                            if (part.name == "preview") previewPart = part
+                            if (part.name == "preview") {
+                                previewBytes = part.streamProvider().readBytes()
+                                previewFileName = part.originalFileName
+                                previewContentType = part.contentType
+                            }
                         }
                         else -> {}
                     }
-                    part.dispose()
                 }
+                multipart.dispose()
 
-                if (name == null || albumId == null || artistId == null || duration == null || previewPart == null) {
+                if (name == null || albumId == null || artistId == null || duration == null || previewBytes == null || previewFileName == null) {
                     return@post call.respond(HttpStatusCode.BadRequest, "Missing name, albumId, artistId, duration, or preview file")
                 }
 
                 try {
-                    val newTrack = contentService.createTrack(name!!, albumId!!, duration!!.toLong(), artistId!!, previewPart!!)
+                    val newTrack = contentService.createTrack(
+                        name!!,
+                        albumId!!,
+                        duration!!.toLong(),
+                        artistId!!,
+                        previewBytes!!,
+                        previewFileName!!,
+                        previewContentType?.toString()
+                    )
                     call.respond(HttpStatusCode.Created, newTrack)
                 } catch (e: Exception) {
                     call.respond(HttpStatusCode.InternalServerError, "Error creating track: ${e.message}")
@@ -166,3 +209,4 @@ fun Route.contentRouting(contentService: ContentService) {
         }
     }
 }
+
