@@ -7,11 +7,9 @@ import io.ktor.http.content.*
 import io.ktor.server.config.*
 
 class S3Service(config: ApplicationConfig) {
-    // CORRECCIÓN: Usar config.config("s3") para leer el bloque separado.
-    private val bucketName: String = config.config("s3").property("bucketName").getString()
+    private val bucketName: String = config.property("s3.bucketName").getString()
 
-    // CORRECCIÓN: Usar config.config("aws") para leer el bloque separado.
-    private val region: String = config.config("aws").property("region").getString()
+    private val region: String = config.property("aws.region").getString()
 
     // Crea el cliente de S3 con la región configurada
     private val s3Client: S3Client = S3Client {

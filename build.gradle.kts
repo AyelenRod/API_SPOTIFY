@@ -43,9 +43,8 @@ dependencies {
     implementation("io.ktor:ktor-server-status-pages-jvm")
 
     //AWS SDK
-    implementation("aws.sdk.kotlin:s3:1.2.0")
-    implementation("aws.sdk.kotlin:aws-core:1.2.0")
-    implementation("aws.smithy.kotlin:http-client-engine-crt:1.0.0")
+    implementation("aws.sdk.kotlin:s3:1.3.79")
+    implementation("aws.smithy.kotlin:http-client-engine-crt:1.3.25")
 
     //BASE DE DATOS - PostgreSQL
     implementation("org.postgresql:postgresql:42.7.1")
