@@ -1,0 +1,57 @@
+name: Ktor MusicApp CI/CD to AWS EC2
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Configurar credenciales SSH para despliegue
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Construir Fat JAR con Gradle
+        run: |
+          chmod +x gradlew
+          ./gradlew shadowJar
+
+      - name: Despliegue en AWS EC2 (git_deploy@${{ secrets.EC2_HOST }})
+        env:
+          HOST: ${{ secrets.EC2_HOST }}
+          USER: ${{ secrets.EC2_USER }}
+          TARGET_PATH: /opt/apps/backend
+          SERVICE_PATH: /etc/systemd/system
+
+        run: |
+          # Copiar y habilitar servicio Systemd
+          echo "Copiando myapp.service a $SERVICE_PATH/..."
+          scp -o StrictHostKeyChecking=no ops/scripts_ubuntu/myapp.service $USER@$HOST:$SERVICE_PATH/
+          
+          # Ejecutar pre_deploy 
+          echo "Ejecutando pre_deploy en el servidor..."
+          scp -o StrictHostKeyChecking=no ops/scripts_ubuntu/pre_deploy.sh $USER@$HOST:/tmp/pre_deploy.sh
+          ssh -o StrictHostKeyChecking=no $USER@$HOST "sudo /bin/bash /tmp/pre_deploy.sh"
+          
+          # Copiar el nuevo Fat JAR
+          echo "Copiando mi-api2.jar a $TARGET_PATH/..."
+          scp -o StrictHostKeyChecking=no build/libs/mi-api2.jar $USER@$HOST:$TARGET_PATH/
+          
+          # Ejecutar post_deploy
+          echo "Ejecutando post_deploy en el servidor..."
+          scp -o StrictHostKeyChecking=no ops/scripts_ubuntu/post_deploy.sh $USER@$HOST:/tmp/post_deploy.sh
+          ssh -o StrictHostKeyChecking=no $USER@$HOST "sudo /bin/bash /tmp/post_deploy.sh"
