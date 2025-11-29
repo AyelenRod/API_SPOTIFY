@@ -7,23 +7,25 @@ import io.ktor.http.content.*
 import io.ktor.server.config.*
 
 class S3Service(config: ApplicationConfig) {
-    // Lee bucketName directamente del bloque 's3'
+    // CORRECCIÓN: Usar config.config("s3") para leer el bloque separado.
     private val bucketName: String = config.config("s3").property("bucketName").getString()
 
-    //Lee region directamente del bloque 'aws'
+    // CORRECCIÓN: Usar config.config("aws") para leer el bloque separado.
     private val region: String = config.config("aws").property("region").getString()
 
+    // Crea el cliente de S3 con la región configurada
     private val s3Client: S3Client = S3Client {
+        // El SDK de AWS buscará las credenciales automáticamente en ~/.aws/credentials
         this.region = this@S3Service.region
     }
 
-    // URL base del bucket para construir URLs públicas de los archivos
+    // URL base del bucket para construir URLs públicas
     private val bucketBaseUrl = "https://$bucketName.s3.$region.amazonaws.com/"
 
-    // Sube un archivo a S3 y retorna su URL pública
     suspend fun uploadFile(part: PartData.FileItem, fileKey: String): String {
         val fileBytes = part.streamProvider().readBytes()
 
+        // Construye la solicitud de subida
         val request = PutObjectRequest {
             bucket = bucketName
             key = fileKey
