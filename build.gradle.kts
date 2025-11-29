@@ -3,8 +3,6 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 plugins {
     kotlin("jvm") version "1.9.23"
     id("io.ktor.plugin") version "2.3.9"
-
-    // fatjar plugin (Shadow)
     id("com.github.johnrengelman.shadow") version "8.1.1"
     application
 }
@@ -13,7 +11,7 @@ group = "com.musicapp"
 version = "1.0-SNAPSHOT"
 
 application {
-    mainClass.set("io.ktor.server.netty.EngineMain")
+    mainClass.set("com.musicapp.ApplicationKt")
 }
 
 ktor {
@@ -26,25 +24,36 @@ repositories {
 }
 
 dependencies {
-    // Ktor Core & Server
+    // KTOR CORE & SERVER
     implementation("io.ktor:ktor-server-core-jvm")
     implementation("io.ktor:ktor-server-netty-jvm")
 
-    // Serialización (Jackson)
+    // SERIALIZACIÓN JSON
     implementation("io.ktor:ktor-serialization-jackson-jvm")
     implementation("io.ktor:ktor-server-content-negotiation-jvm")
 
-    // Seguridad (JWT)
+    // SEGURIDAD Y AUTENTICACIÓN
     implementation("io.ktor:ktor-server-auth-jvm")
     implementation("io.ktor:ktor-server-auth-jwt-jvm")
 
-    // AWS SDK (S3)
+    // CORS
+    implementation("io.ktor:ktor-server-cors-jvm")
+
+    //STATUS PAGES (Manejo de errores)
+    implementation("io.ktor:ktor-server-status-pages-jvm")
+
+    // AWS SDK
     implementation("aws.sdk.kotlin:s3:1.2.0")
 
-    // Logging
-    implementation("ch.qos.logback:logback-classic:1.5.6")
+    // AWS DEPENDENCIES
+    implementation("aws.sdk.kotlin:aws-core:1.2.0")
+    implementation("aws.smithy.kotlin:http-client-engine-crt:1.0.0")
 
-    // Testing
+    // LOGGING
+    implementation("ch.qos.logback:logback-classic:1.5.6")
+    implementation("org.slf4j:slf4j-api:2.0.9")
+
+    // TESTING
     testImplementation("io.ktor:ktor-server-tests-jvm")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
@@ -56,10 +65,16 @@ kotlin {
 
 tasks.withType<ShadowJar> {
     archiveFileName.set("mi-api2.jar")
+
     manifest {
         attributes["Main-Class"] = application.mainClass.get()
     }
+
     mergeServiceFiles()
+
+    exclude("META-INF/*.SF")
+    exclude("META-INF/*.DSA")
+    exclude("META-INF/*.RSA")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {

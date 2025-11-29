@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-package models
-=======
 package com.musicapp.models
->>>>>>> api2
 
 data class TrackDTO(
     val id: String,

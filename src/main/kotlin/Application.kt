@@ -1,8 +1,5 @@
-<<<<<<< HEAD
-=======
 package com.musicapp
 
->>>>>>> api2
 import io.ktor.http.*
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.SerializationFeature
@@ -19,10 +16,6 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
-<<<<<<< HEAD
-import io.ktor.server.plugins.multipart.*
-=======
->>>>>>> api2
 import io.ktor.server.routing.*
 
 fun main() {
@@ -31,19 +24,10 @@ fun main() {
 }
 
 fun Application.module() {
-<<<<<<< HEAD
-
     val s3Service = S3Service(environment.config)
     val contentService = ContentService(s3Service)
 
-    // Plugins
-=======
-    // Inicialización de servicios
-    val s3Service = S3Service(environment.config)
-    val contentService = ContentService(s3Service)
-
-    // Plugin de negociación de contenido (para JSON con Jackson)
->>>>>>> api2
+    // Plugin de negociación de contenido
     install(ContentNegotiation) {
         jackson {
             enable(SerializationFeature.INDENT_OUTPUT)
@@ -51,17 +35,7 @@ fun Application.module() {
         }
     }
 
-<<<<<<< HEAD
-    install(CORS) {
-        anyHost()
-        allowHeader(HttpHeaders.Authorization)
-    }
-
-    install(MultiPartFormSupport)
-
-    // Seguridad JWT
-=======
-    // Plugin de CORS (permite peticiones desde cualquier origen)
+    // Plugin de CORS
     install(CORS) {
         anyHost()
         allowHeader(HttpHeaders.Authorization)
@@ -73,42 +47,14 @@ fun Application.module() {
     }
 
     // Plugin de autenticación JWT
->>>>>>> api2
     install(Authentication) {
         jwt("auth-jwt") {
             AuthService.configureJwt(this)
         }
     }
 
-<<<<<<< HEAD
-    // Rutas
-=======
-    // Definición de rutas
->>>>>>> api2
     routing {
         authRouting()
         contentRouting(contentService)
     }
-<<<<<<< HEAD
 }
-
-// --- Archivo de configuración por defecto para Ktor (application.conf) ---
-// src/main/resources/application.conf
-// No se pide, pero es necesario para la configuración de S3.
-
-/*
-ktor {
-    deployment {
-        port = 8080 // Puerto por defecto, será mapeado a 80 por authbind
-    }
-}
-aws {
-    s3 {
-        bucketName = "mi-clon-spotify-s3-bucket" // Cambiar a tu bucket
-        region = "us-east-1" // Cambiar a tu región
-    }
-}
-*/
-=======
-}
->>>>>>> api2

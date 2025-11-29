@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-package models
-=======
 package com.musicapp.models
->>>>>>> api2
 
 import java.util.*
 
@@ -12,9 +8,3 @@ data class Artist(
     val genre: String,
     val image: String
 )
-
-
-<<<<<<< HEAD
-
-=======
->>>>>>> api2
