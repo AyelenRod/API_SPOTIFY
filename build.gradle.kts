@@ -24,36 +24,49 @@ repositories {
 }
 
 dependencies {
-    // KTOR CORE & SERVER
+    //KTOR CORE & SERVER
     implementation("io.ktor:ktor-server-core-jvm")
     implementation("io.ktor:ktor-server-netty-jvm")
 
-    // SERIALIZACIÓN JSON
+    //SERIALIZACIÓN JSON
     implementation("io.ktor:ktor-serialization-jackson-jvm")
     implementation("io.ktor:ktor-server-content-negotiation-jvm")
 
-    // SEGURIDAD Y AUTENTICACIÓN
+    //SEGURIDAD Y AUTENTICACIÓN
     implementation("io.ktor:ktor-server-auth-jvm")
     implementation("io.ktor:ktor-server-auth-jwt-jvm")
 
-    // CORS
+    //CORS
     implementation("io.ktor:ktor-server-cors-jvm")
 
-    //STATUS PAGES (Manejo de errores)
+    // STATUS PAGES
     implementation("io.ktor:ktor-server-status-pages-jvm")
 
-    // AWS SDK
+    //AWS SDK
     implementation("aws.sdk.kotlin:s3:1.2.0")
-
-    // AWS DEPENDENCIES
     implementation("aws.sdk.kotlin:aws-core:1.2.0")
     implementation("aws.smithy.kotlin:http-client-engine-crt:1.0.0")
 
-    // LOGGING
+    //BASE DE DATOS - PostgreSQL
+    implementation("org.postgresql:postgresql:42.7.1")
+
+    // HikariCP - Pool de conexiones
+    implementation("com.zaxxer:HikariCP:5.1.0")
+
+    // Exposed ORM - Framework de base de datos para Kotlin
+    implementation("org.jetbrains.exposed:exposed-core:0.46.0")
+    implementation("org.jetbrains.exposed:exposed-dao:0.46.0")
+    implementation("org.jetbrains.exposed:exposed-jdbc:0.46.0")
+    implementation("org.jetbrains.exposed:exposed-java-time:0.46.0")
+
+    // BCRYPT para hashear passwords
+    implementation("org.mindrot:jbcrypt:0.4")
+
+    //LOGGING
     implementation("ch.qos.logback:logback-classic:1.5.6")
     implementation("org.slf4j:slf4j-api:2.0.9")
 
-    // TESTING
+    //TESTING
     testImplementation("io.ktor:ktor-server-tests-jvm")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
@@ -65,13 +78,10 @@ kotlin {
 
 tasks.withType<ShadowJar> {
     archiveFileName.set("mi-api2.jar")
-
     manifest {
         attributes["Main-Class"] = application.mainClass.get()
     }
-
     mergeServiceFiles()
-
     exclude("META-INF/*.SF")
     exclude("META-INF/*.DSA")
     exclude("META-INF/*.RSA")

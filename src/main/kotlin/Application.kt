@@ -4,6 +4,7 @@ import io.ktor.http.*
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.musicapp.auth.AuthService
+import com.musicapp.database.DatabaseFactory
 import com.musicapp.routes.authRouting
 import com.musicapp.routes.contentRouting
 import com.musicapp.services.ContentService
@@ -24,10 +25,27 @@ fun main() {
 }
 
 fun Application.module() {
+    // NICIALIZACIÓN DE BASE DE DATOS
+    val dbUrl = environment.config.propertyOrNull("database.url")?.getString()
+        ?: "jdbc:postgresql://localhost:5432/spotify_db"
+    val dbUser = environment.config.propertyOrNull("database.user")?.getString()
+        ?: "postgres"
+    val dbPassword = environment.config.propertyOrNull("database.password")?.getString()
+        ?: "postgres"
+
+    DatabaseFactory.init(
+        jdbcUrl = dbUrl,
+        username = dbUser,
+        password = dbPassword
+    )
+
+    println("Base de datos conectada: $dbUrl")
+
+    // INICIALIZACIÓN DE SERVICIOS
     val s3Service = S3Service(environment.config)
     val contentService = ContentService(s3Service)
 
-    // Plugin de negociación de contenido
+    // PLUGINS
     install(ContentNegotiation) {
         jackson {
             enable(SerializationFeature.INDENT_OUTPUT)
@@ -53,8 +71,11 @@ fun Application.module() {
         }
     }
 
+    //RUTAS
     routing {
         authRouting()
         contentRouting(contentService)
     }
+
+    println("Servidor iniciado en http://0.0.0.0:8080")
 }
