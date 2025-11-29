@@ -1,3 +1,8 @@
+<<<<<<< HEAD
+=======
+package com.musicapp
+
+>>>>>>> api2
 import io.ktor.http.*
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.SerializationFeature
@@ -14,7 +19,10 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
+<<<<<<< HEAD
 import io.ktor.server.plugins.multipart.*
+=======
+>>>>>>> api2
 import io.ktor.server.routing.*
 
 fun main() {
@@ -23,11 +31,19 @@ fun main() {
 }
 
 fun Application.module() {
+<<<<<<< HEAD
 
     val s3Service = S3Service(environment.config)
     val contentService = ContentService(s3Service)
 
     // Plugins
+=======
+    // Inicialización de servicios
+    val s3Service = S3Service(environment.config)
+    val contentService = ContentService(s3Service)
+
+    // Plugin de negociación de contenido (para JSON con Jackson)
+>>>>>>> api2
     install(ContentNegotiation) {
         jackson {
             enable(SerializationFeature.INDENT_OUTPUT)
@@ -35,6 +51,7 @@ fun Application.module() {
         }
     }
 
+<<<<<<< HEAD
     install(CORS) {
         anyHost()
         allowHeader(HttpHeaders.Authorization)
@@ -43,17 +60,36 @@ fun Application.module() {
     install(MultiPartFormSupport)
 
     // Seguridad JWT
+=======
+    // Plugin de CORS (permite peticiones desde cualquier origen)
+    install(CORS) {
+        anyHost()
+        allowHeader(HttpHeaders.Authorization)
+        allowHeader(HttpHeaders.ContentType)
+        allowMethod(HttpMethod.Options)
+        allowMethod(HttpMethod.Put)
+        allowMethod(HttpMethod.Delete)
+        allowMethod(HttpMethod.Patch)
+    }
+
+    // Plugin de autenticación JWT
+>>>>>>> api2
     install(Authentication) {
         jwt("auth-jwt") {
             AuthService.configureJwt(this)
         }
     }
 
+<<<<<<< HEAD
     // Rutas
+=======
+    // Definición de rutas
+>>>>>>> api2
     routing {
         authRouting()
         contentRouting(contentService)
     }
+<<<<<<< HEAD
 }
 
 // --- Archivo de configuración por defecto para Ktor (application.conf) ---
@@ -73,3 +109,6 @@ aws {
     }
 }
 */
+=======
+}
+>>>>>>> api2

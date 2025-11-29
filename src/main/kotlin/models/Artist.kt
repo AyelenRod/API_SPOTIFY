@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 package models
+=======
+package com.musicapp.models
+>>>>>>> api2
 
 import java.util.*
 
@@ -10,4 +14,7 @@ data class Artist(
 )
 
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> api2
