@@ -26,12 +26,13 @@ object ArtistRepository {
     }
 
     suspend fun findById(id: UUID): Artist? = dbQuery {
-        Artists.select { Artists.id eq id }
+        Artists.selectAll()
+            .where { Artists.id eq id }
             .map { resultRowToArtist(it) }
             .singleOrNull()
     }
 
-        suspend fun getAll(): List<Artist> = dbQuery {
-            Artists.selectAll().map { resultRowToArtist(it) }
-        }
+    suspend fun getAll(): List<Artist> = dbQuery {
+        Artists.selectAll().map { resultRowToArtist(it) }
     }
+}

@@ -28,7 +28,8 @@ object AlbumRepository {
     }
 
     suspend fun findById(id: UUID): Album? = dbQuery {
-        Albums.select { Albums.id eq id }
+        Albums.selectAll()
+            .where { Albums.id eq id }
             .map { resultRowToAlbum(it) }
             .singleOrNull()
     }

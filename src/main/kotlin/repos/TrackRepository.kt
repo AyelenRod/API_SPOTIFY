@@ -32,7 +32,8 @@ object TrackRepository {
     }
 
     suspend fun findById(id: UUID): Track? = dbQuery {
-        Tracks.select { Tracks.id eq id }
+        Tracks.selectAll()
+            .where { Tracks.id eq id }
             .map { resultRowToTrack(it) }
             .singleOrNull()
     }
@@ -44,7 +45,8 @@ object TrackRepository {
     suspend fun search(query: String): List<Track> = dbQuery {
         val q = query.lowercase()
         (Tracks innerJoin Artists innerJoin Albums)
-            .select {
+            .selectAll()
+            .where {
                 (Tracks.name.lowerCase() like "%$q%") or
                         (Artists.name.lowerCase() like "%$q%") or
                         (Albums.name.lowerCase() like "%$q%")

@@ -42,13 +42,15 @@ object UserRepository {
     }
 
     suspend fun findByUsername(username: String): User? = dbQuery {
-        Users.select { Users.username eq username }
+        Users.selectAll()
+            .where { Users.username eq username }
             .map { resultRowToUser(it) }
             .singleOrNull()
     }
 
     suspend fun findById(id: UUID): User? = dbQuery {
-        Users.select { Users.id eq id }
+        Users.selectAll()
+            .where { Users.id eq id }
             .map { resultRowToUser(it) }
             .singleOrNull()
     }

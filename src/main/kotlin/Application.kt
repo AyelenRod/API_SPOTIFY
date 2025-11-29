@@ -13,6 +13,7 @@ import io.ktor.serialization.jackson.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
+import io.ktor.server.config.MapApplicationConfig
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
@@ -28,6 +29,7 @@ fun main() {
 fun Application.module() {
     println("Iniciando aplicación Spotify Clone API...")
 
+    // Configuración de base de datos
     val dbUrl = environment.config.propertyOrNull("database.url")?.getString()
         ?: "jdbc:postgresql://localhost:5432/spotify_db"
     val dbUser = environment.config.propertyOrNull("database.user")?.getString()
@@ -43,7 +45,20 @@ fun Application.module() {
 
     println("Base de datos conectada: $dbUrl")
 
-   val s3Service = S3Service(environment.config)
+    // ✅ OPCIÓN ALTERNATIVA: Si application.conf no se lee, configurar directamente
+    val s3Service = try {
+        S3Service(environment.config)
+    } catch (e: Exception) {
+        println("ADVERTENCIA: No se pudo leer s3.bucketName de application.conf")
+        println("Usando configuración por defecto...")
+
+        // Crear configuración manual
+        val manualConfig = MapApplicationConfig(
+            "aws.region" to "us-east-1",
+            "s3.bucketName" to "amzn-s3-mispotifyapi"
+        )
+        S3Service(manualConfig)
+    }
     println("AWS S3 configurado")
 
     val contentService = ContentService(s3Service)

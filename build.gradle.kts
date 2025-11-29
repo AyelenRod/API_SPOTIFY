@@ -1,9 +1,9 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
-    kotlin("jvm") version "1.9.23"
-    id("io.ktor.plugin") version "2.3.9"
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    kotlin("jvm") version "2.0.21"
+    id("io.ktor.plugin") version "3.0.3"
+    id("com.gradleup.shadow") version "8.3.5"
     application
 }
 
@@ -16,6 +16,7 @@ application {
 
 ktor {
     fatJar {
+        archiveFileName.set("mi-api2.jar")
     }
 }
 
@@ -24,66 +25,57 @@ repositories {
 }
 
 dependencies {
-    //KTOR CORE & SERVER
-    implementation("io.ktor:ktor-server-core-jvm")
-    implementation("io.ktor:ktor-server-netty-jvm")
+    // KTOR CORE & SERVER
+    implementation("io.ktor:ktor-server-core-jvm:3.0.3")
+    implementation("io.ktor:ktor-server-netty-jvm:3.0.3")
 
-    //SERIALIZACIÓN JSON
-    implementation("io.ktor:ktor-serialization-jackson-jvm")
-    implementation("io.ktor:ktor-server-content-negotiation-jvm")
+    // SERIALIZACIÓN JSON
+    implementation("io.ktor:ktor-serialization-jackson-jvm:3.0.3")
+    implementation("io.ktor:ktor-server-content-negotiation-jvm:3.0.3")
 
-    //SEGURIDAD Y AUTENTICACIÓN
-    implementation("io.ktor:ktor-server-auth-jvm")
-    implementation("io.ktor:ktor-server-auth-jwt-jvm")
+    // SEGURIDAD Y AUTENTICACIÓN
+    implementation("io.ktor:ktor-server-auth-jvm:3.0.3")
+    implementation("io.ktor:ktor-server-auth-jwt-jvm:3.0.3")
 
-    //CORS
-    implementation("io.ktor:ktor-server-cors-jvm")
+    // CORS
+    implementation("io.ktor:ktor-server-cors-jvm:3.0.3")
 
     // STATUS PAGES
-    implementation("io.ktor:ktor-server-status-pages-jvm")
+    implementation("io.ktor:ktor-server-status-pages-jvm:3.0.3")
 
-    //AWS SDK
+    // AWS SDK
     implementation("aws.sdk.kotlin:s3:1.3.79")
+    implementation("aws.sdk.kotlin:aws-core:1.3.79")
     implementation("aws.smithy.kotlin:http-client-engine-crt:1.3.25")
 
-    //BASE DE DATOS - PostgreSQL
-    implementation("org.postgresql:postgresql:42.7.1")
+    // BASE DE DATOS - PostgreSQL
+    implementation("org.postgresql:postgresql:42.7.4")
 
     // HikariCP - Pool de conexiones
-    implementation("com.zaxxer:HikariCP:5.1.0")
+    implementation("com.zaxxer:HikariCP:6.2.1")
 
-    // Exposed ORM - Framework de base de datos para Kotlin
-    implementation("org.jetbrains.exposed:exposed-core:0.46.0")
-    implementation("org.jetbrains.exposed:exposed-dao:0.46.0")
-    implementation("org.jetbrains.exposed:exposed-jdbc:0.46.0")
-    implementation("org.jetbrains.exposed:exposed-java-time:0.46.0")
+    // Exposed ORM
+    implementation("org.jetbrains.exposed:exposed-core:0.57.0")
+    implementation("org.jetbrains.exposed:exposed-dao:0.57.0")
+    implementation("org.jetbrains.exposed:exposed-jdbc:0.57.0")
+    implementation("org.jetbrains.exposed:exposed-java-time:0.57.0")
 
-    // BCRYPT para hashear passwords
+    // BCRYPT
     implementation("org.mindrot:jbcrypt:0.4")
 
-    //LOGGING
-    implementation("ch.qos.logback:logback-classic:1.5.6")
-    implementation("org.slf4j:slf4j-api:2.0.9")
+    // LOGGING
+    implementation("ch.qos.logback:logback-classic:1.5.12")
+    implementation("org.slf4j:slf4j-api:2.0.16")
 
-    //TESTING
-    testImplementation("io.ktor:ktor-server-tests-jvm")
+    // TESTING
+    // ✅ CORREGIDO: Usar test-host en lugar de tests
+    testImplementation("io.ktor:ktor-server-test-host-jvm:3.0.3")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
 }
 
 kotlin {
     jvmToolchain(21)
-}
-
-tasks.withType<ShadowJar> {
-    archiveFileName.set("mi-api2.jar")
-    manifest {
-        attributes["Main-Class"] = application.mainClass.get()
-    }
-    mergeServiceFiles()
-    exclude("META-INF/*.SF")
-    exclude("META-INF/*.DSA")
-    exclude("META-INF/*.RSA")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
