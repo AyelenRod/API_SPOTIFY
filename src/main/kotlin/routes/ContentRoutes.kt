@@ -11,10 +11,10 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import java.util.*
 
 fun Route.contentRouting(contentService: ContentService) {
-
-    // Endpoint público de búsqueda de canciones
+    // 1. Endpoint de Búsqueda
     get("/search") {
         val query = call.request.queryParameters["q"]
             ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing query parameter 'q'")
@@ -24,10 +24,32 @@ fun Route.contentRouting(contentService: ContentService) {
         call.respond(SearchResponse(tracks = TracksWrapper(items = trackDTOs)))
     }
 
-    // Rutas protegidas con autenticación JWT
+    // 2. Endpoint para OBTENER UN ARTISTA POR ID (PÚBLICO)
+    route("/artists") {
+        get("/{id}") {
+            val artistId = call.parameters["id"]
+                ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing artist ID")
+
+            try {
+                val artist = contentService.getArtistById(artistId)
+
+                if (artist == null) {
+                    call.respond(HttpStatusCode.NotFound)
+                } else {
+                    call.respond(HttpStatusCode.OK, artist)
+                }
+            } catch (e: IllegalArgumentException) {
+                call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid ID format")
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, "Error retrieving artist: ${e.message}")
+            }
+        }
+    }
+
+    // RUTAS PROTEGIDAS (REQUIERE JWT)
     authenticate("auth-jwt") {
 
-        // Crea un nuevo artista con rol de ADMIN
+        // Endpoint de CREACIÓN de Artista
         route("/artists") {
             post {
                 val principal = call.principal<JWTPrincipal>()
@@ -51,30 +73,27 @@ fun Route.contentRouting(contentService: ContentService) {
                                 "name" -> name = part.value
                                 "genre" -> genre = part.value
                             }
-                            part.dispose() // Descartar inmediatamente la parte del formulario
+                            part.dispose()
                         }
                         is PartData.FileItem -> {
                             if (part.name == "image") {
-                                // MODIFICADO: Leer el stream de bytes inmediatamente
                                 imageBytes = part.streamProvider().readBytes()
                                 imageFileName = part.originalFileName
                                 imageContentType = part.contentType
                             }
-                            part.dispose() // Descartar inmediatamente la parte del archivo después de leerla
+                            part.dispose()
                         }
                         else -> {
                             part.dispose()
                         }
                     }
                 }
-                // Se elimina multipart.dispose() que generaba error de referencia.
 
                 if (name == null || genre == null || imageBytes == null || imageFileName == null) {
                     return@post call.respond(HttpStatusCode.BadRequest, "Missing name, genre, or image file")
                 }
 
                 try {
-                    // LLAMADA ACTUALIZADA: Usando ByteArray y nombre de archivo
                     val newArtist = contentService.createArtist(
                         name!!,
                         genre!!,
@@ -90,7 +109,7 @@ fun Route.contentRouting(contentService: ContentService) {
         }
 
 
-        // Crea un nuevo álbum con rol de ADMIN
+        // Endpoint de CREACIÓN de Álbum
         route("/albums") {
             post {
                 val principal = call.principal<JWTPrincipal>()
@@ -120,7 +139,6 @@ fun Route.contentRouting(contentService: ContentService) {
                         }
                         is PartData.FileItem -> {
                             if (part.name == "albumArt") {
-                                // MODIFICADO: Leer el stream de bytes inmediatamente
                                 albumArtBytes = part.streamProvider().readBytes()
                                 albumArtFileName = part.originalFileName
                                 albumArtContentType = part.contentType
@@ -132,14 +150,12 @@ fun Route.contentRouting(contentService: ContentService) {
                         }
                     }
                 }
-                // Se elimina multipart.dispose()
 
                 if (name == null || artistId == null || year == null || albumArtBytes == null || albumArtFileName == null) {
                     return@post call.respond(HttpStatusCode.BadRequest, "Missing name, artistId, year, or albumArt file")
                 }
 
                 try {
-                    // LLAMADA ACTUALIZADA
                     val newAlbum = contentService.createAlbum(
                         name!!,
                         artistId!!,
@@ -155,7 +171,7 @@ fun Route.contentRouting(contentService: ContentService) {
             }
         }
 
-        // Crea una nueva canción con rol de ADMIN
+        // Endpoint de CREACIÓN de Pista
         route("/tracks") {
             post {
                 val principal = call.principal<JWTPrincipal>()
@@ -187,7 +203,6 @@ fun Route.contentRouting(contentService: ContentService) {
                         }
                         is PartData.FileItem -> {
                             if (part.name == "preview") {
-                                // MODIFICADO: Leer el stream de bytes inmediatamente
                                 previewBytes = part.streamProvider().readBytes()
                                 previewFileName = part.originalFileName
                                 previewContentType = part.contentType
@@ -199,14 +214,12 @@ fun Route.contentRouting(contentService: ContentService) {
                         }
                     }
                 }
-                // Se elimina multipart.dispose()
 
                 if (name == null || albumId == null || artistId == null || duration == null || previewBytes == null || previewFileName == null) {
                     return@post call.respond(HttpStatusCode.BadRequest, "Missing name, albumId, artistId, duration, or preview file")
                 }
 
                 try {
-                    // LLAMADA ACTUALIZADA
                     val newTrack = contentService.createTrack(
                         name!!,
                         albumId!!,
