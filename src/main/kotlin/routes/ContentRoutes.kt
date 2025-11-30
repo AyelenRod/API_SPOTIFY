@@ -11,45 +11,119 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import java.util.*
 
 fun Route.contentRouting(contentService: ContentService) {
-    // 1. Endpoint de Búsqueda
+
+    // Health Check - Verifica que la API esté funcionando
+    get("/health") {
+        call.respond(HttpStatusCode.OK, mapOf(
+            "status" to "UP",
+            "service" to "MusicApp Backend",
+            "timestamp" to System.currentTimeMillis()
+        ))
+    }
+
+    // Búsqueda de Tracks
     get("/search") {
         val query = call.request.queryParameters["q"]
             ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing query parameter 'q'")
 
         val trackDTOs = contentService.searchTracks(query)
-
         call.respond(SearchResponse(tracks = TracksWrapper(items = trackDTOs)))
     }
 
-    // 2. Endpoint para OBTENER UN ARTISTA POR ID (PÚBLICO)
-    route("/artists") {
-        get("/{id}") {
-            val artistId = call.parameters["id"]
-                ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing artist ID")
-
-            try {
-                val artist = contentService.getArtistById(artistId)
-
-                if (artist == null) {
-                    call.respond(HttpStatusCode.NotFound)
-                } else {
-                    call.respond(HttpStatusCode.OK, artist)
-                }
-            } catch (e: IllegalArgumentException) {
-                call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid ID format")
-            } catch (e: Exception) {
-                call.respond(HttpStatusCode.InternalServerError, "Error retrieving artist: ${e.message}")
-            }
+    // Listar TODOS los artistas
+    get("/artists") {
+        try {
+            val artists = contentService.getAllArtists()
+            call.respond(HttpStatusCode.OK, artists)
+        } catch (e: Exception) {
+            call.respond(HttpStatusCode.InternalServerError, "Error retrieving artists: ${e.message}")
         }
     }
 
-    // RUTAS PROTEGIDAS (REQUIERE JWT)
+    // Obtener UN artista por ID
+    get("/artists/{id}") {
+        val artistId = call.parameters["id"]
+            ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing artist ID")
+
+        try {
+            val artist = contentService.getArtistById(artistId)
+            if (artist == null) {
+                call.respond(HttpStatusCode.NotFound, "Artist not found")
+            } else {
+                call.respond(HttpStatusCode.OK, artist)
+            }
+        } catch (e: IllegalArgumentException) {
+            call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid ID format")
+        } catch (e: Exception) {
+            call.respond(HttpStatusCode.InternalServerError, "Error retrieving artist: ${e.message}")
+        }
+    }
+
+    // Listar TODOS los álbumes
+    get("/albums") {
+        try {
+            val albums = contentService.getAllAlbums()
+            call.respond(HttpStatusCode.OK, albums)
+        } catch (e: Exception) {
+            call.respond(HttpStatusCode.InternalServerError, "Error retrieving albums: ${e.message}")
+        }
+    }
+
+    // Obtener UN álbum por ID
+    get("/albums/{id}") {
+        val albumId = call.parameters["id"]
+            ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing album ID")
+
+        try {
+            val album = contentService.getAlbumById(albumId)
+            if (album == null) {
+                call.respond(HttpStatusCode.NotFound, "Album not found")
+            } else {
+                call.respond(HttpStatusCode.OK, album)
+            }
+        } catch (e: IllegalArgumentException) {
+            call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid ID format")
+        } catch (e: Exception) {
+            call.respond(HttpStatusCode.InternalServerError, "Error retrieving album: ${e.message}")
+        }
+    }
+
+    // Listar TODOS los tracks
+    get("/tracks") {
+        try {
+            val tracks = contentService.getAllTracks()
+            call.respond(HttpStatusCode.OK, tracks)
+        } catch (e: Exception) {
+            call.respond(HttpStatusCode.InternalServerError, "Error retrieving tracks: ${e.message}")
+        }
+    }
+
+    // Obtener UNA canción por ID
+    get("/tracks/{id}") {
+        val trackId = call.parameters["id"]
+            ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing track ID")
+
+        try {
+            val track = contentService.getTrackById(trackId)
+            if (track == null) {
+                call.respond(HttpStatusCode.NotFound, "Track not found")
+            } else {
+                call.respond(HttpStatusCode.OK, track)
+            }
+        } catch (e: IllegalArgumentException) {
+            call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid ID format")
+        } catch (e: Exception) {
+            call.respond(HttpStatusCode.InternalServerError, "Error retrieving track: ${e.message}")
+        }
+    }
+
+
+    // RUTAS PROTEGIDAS
     authenticate("auth-jwt") {
 
-        // Endpoint de CREACIÓN de Artista
+        // POST /artists - Crear artista (ADMIN)
         route("/artists") {
             post {
                 val principal = call.principal<JWTPrincipal>()
@@ -83,9 +157,7 @@ fun Route.contentRouting(contentService: ContentService) {
                             }
                             part.dispose()
                         }
-                        else -> {
-                            part.dispose()
-                        }
+                        else -> part.dispose()
                     }
                 }
 
@@ -108,8 +180,7 @@ fun Route.contentRouting(contentService: ContentService) {
             }
         }
 
-
-        // Endpoint de CREACIÓN de Álbum
+        // POST /albums - Crear álbum (ADMIN)
         route("/albums") {
             post {
                 val principal = call.principal<JWTPrincipal>()
@@ -145,9 +216,7 @@ fun Route.contentRouting(contentService: ContentService) {
                             }
                             part.dispose()
                         }
-                        else -> {
-                            part.dispose()
-                        }
+                        else -> part.dispose()
                     }
                 }
 
@@ -171,7 +240,7 @@ fun Route.contentRouting(contentService: ContentService) {
             }
         }
 
-        // Endpoint de CREACIÓN de Pista
+        // POST /tracks - Crear track/canción (ADMIN)
         route("/tracks") {
             post {
                 val principal = call.principal<JWTPrincipal>()
@@ -209,9 +278,7 @@ fun Route.contentRouting(contentService: ContentService) {
                             }
                             part.dispose()
                         }
-                        else -> {
-                            part.dispose()
-                        }
+                        else -> part.dispose()
                     }
                 }
 

@@ -16,14 +16,14 @@ object AlbumRepository {
         year = row[Albums.year]
     )
 
-    // MODIFICADO: Crea el álbum usando los parámetros del servicio
+    // Crea un nuevo álbum en la base de datos.
     suspend fun createAlbum(name: String, artistId: UUID, year: Int, albumArtUrl: String): Album = dbQuery {
         val newId = UUID.randomUUID()
         Albums.insert {
             it[id] = newId
             it[Albums.name] = name
             it[Albums.artistId] = artistId
-            it[albumArt] = albumArtUrl // Guarda la URL de S3
+            it[albumArt] = albumArtUrl
             it[Albums.year] = year
         }
 
@@ -33,7 +33,7 @@ object AlbumRepository {
             .single()
     }
 
-    // CORREGIDO: Renombrado a getAlbumById
+    // Obtiene un álbum por su ID.
     suspend fun getAlbumById(id: UUID): Album? = dbQuery {
         Albums.selectAll()
             .where { Albums.id eq id }
@@ -41,5 +41,9 @@ object AlbumRepository {
             .singleOrNull()
     }
 
-    // (Funciones findById/create/getAll anteriores eliminadas o renombradas)
+    // Obtiene todos los álbumes de la base de datos.
+    suspend fun getAllAlbums(): List<Album> = dbQuery {
+        Albums.selectAll()
+            .map { resultRowToAlbum(it) }
+    }
 }

@@ -16,13 +16,14 @@ class ContentService(
     private val trackRepository: TrackRepository
 ) {
 
+    // Genera una clave única para un archivo en S3
     private fun generateFileKey(originalFileName: String, folder: String): String {
         val extension = originalFileName.substringAfterLast('.', "")
         val uniqueId = UUID.randomUUID().toString()
         return "$folder/$uniqueId.$extension"
     }
 
-    // Convertidor de Track a TrackDTO
+    // Convierte un Track a TrackDTO, incluyendo datos de artista y álbum
     private suspend fun toTrackDTO(track: Track): TrackDTO {
         val artist = artistRepository.getArtistById(track.artistId)
             ?: throw IllegalStateException("Artist not found for track ${track.id}")
@@ -41,7 +42,7 @@ class ContentService(
         )
     }
 
-
+    // MÉTODOS GET (LECTURA)
     suspend fun getArtistById(id: String): Artist? {
         val artistUUID = try {
             UUID.fromString(id)
@@ -51,13 +52,44 @@ class ContentService(
         return artistRepository.getArtistById(artistUUID)
     }
 
-    // Busca canciones por query
+    suspend fun getAllArtists(): List<Artist> {
+        return artistRepository.getAllArtists()
+    }
+
+    suspend fun getAlbumById(id: String): Album? {
+        val albumUUID = try {
+            UUID.fromString(id)
+        } catch (e: IllegalArgumentException) {
+            throw IllegalArgumentException("Invalid UUID format for album ID")
+        }
+        return albumRepository.getAlbumById(albumUUID)
+    }
+
+    suspend fun getAllAlbums(): List<Album> {
+        return albumRepository.getAllAlbums()
+    }
+
+    suspend fun getTrackById(id: String): TrackDTO? {
+        val trackUUID = try {
+            UUID.fromString(id)
+        } catch (e: IllegalArgumentException) {
+            throw IllegalArgumentException("Invalid UUID format for track ID")
+        }
+        val track = trackRepository.getTrackById(trackUUID) ?: return null
+        return toTrackDTO(track)
+    }
+
+    suspend fun getAllTracks(): List<TrackDTO> {
+        val tracks = trackRepository.getAllTracks()
+        return tracks.map { toTrackDTO(it) }
+    }
+
     suspend fun searchTracks(query: String): List<TrackDTO> {
         val tracks = trackRepository.searchTracksByName(query)
         return tracks.map { toTrackDTO(it) }
     }
 
-    // Crea un nuevo artista
+    // MÉTODOS POST
     suspend fun createArtist(
         name: String,
         genre: String,
@@ -75,7 +107,6 @@ class ContentService(
         return artistRepository.createArtist(name = name, genre = genre, imageUrl = imageUrl)
     }
 
-    // Crea un nuevo álbum
     suspend fun createAlbum(
         name: String,
         artistId: String,
@@ -104,7 +135,6 @@ class ContentService(
         )
     }
 
-    // Crea una nueva canción/pista
     suspend fun createTrack(
         name: String,
         albumId: String,

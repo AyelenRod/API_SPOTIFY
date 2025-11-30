@@ -19,14 +19,20 @@ object TrackRepository {
         artistId = row[Tracks.artistId]
     )
 
-    // MODIFICADO: Crea la pista usando los parámetros del servicio
-    suspend fun createTrack(name: String, albumId: UUID, duration: Long, artistId: UUID, previewUrl: String): Track = dbQuery {
+    // Crea un nuevo track en la base de datos.
+    suspend fun createTrack(
+        name: String,
+        albumId: UUID,
+        duration: Long,
+        artistId: UUID,
+        previewUrl: String
+    ): Track = dbQuery {
         val newId = UUID.randomUUID()
         Tracks.insert {
             it[id] = newId
             it[Tracks.name] = name
             it[Tracks.duration] = duration
-            it[Tracks.previewUrl] = previewUrl // Guarda la URL de S3
+            it[Tracks.previewUrl] = previewUrl
             it[Tracks.albumId] = albumId
             it[Tracks.artistId] = artistId
         }
@@ -37,7 +43,7 @@ object TrackRepository {
             .single()
     }
 
-    // CORREGIDO: Renombrado a getTrackById
+    // Obtiene un track por su ID.
     suspend fun getTrackById(id: UUID): Track? = dbQuery {
         Tracks.selectAll()
             .where { Tracks.id eq id }
@@ -45,10 +51,15 @@ object TrackRepository {
             .singleOrNull()
     }
 
-    // CORREGIDO: Renombrado a searchTracksByName (aunque la implementación busca en 3 tablas)
+    // Obtiene todos los tracks de la base de datos.
+    suspend fun getAllTracks(): List<Track> = dbQuery {
+        Tracks.selectAll()
+            .map { resultRowToTrack(it) }
+    }
+
+    // Busca tracks por nombre, artista o álbum.
     suspend fun searchTracksByName(query: String): List<Track> = dbQuery {
         val q = query.lowercase()
-        // Asegúrate de que Artists y Albums estén en scope para el innerJoin
         (Tracks innerJoin Artists innerJoin Albums)
             .selectAll()
             .where {
@@ -58,6 +69,4 @@ object TrackRepository {
             }
             .map { resultRowToTrack(it) }
     }
-
-    // (Funciones findById/create/getAll anteriores eliminadas o renombradas)
 }

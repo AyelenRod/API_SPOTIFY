@@ -8,9 +8,9 @@ import com.musicapp.routes.authRouting
 import com.musicapp.routes.contentRouting
 import com.musicapp.services.ContentService
 import com.musicapp.services.S3Service
-import com.musicapp.repos.ArtistRepository // <--- Importación necesaria
-import com.musicapp.repos.AlbumRepository // <--- Importación necesaria
-import com.musicapp.repos.TrackRepository // <--- Importación necesaria
+import com.musicapp.repos.ArtistRepository
+import com.musicapp.repos.AlbumRepository
+import com.musicapp.repos.TrackRepository
 import io.ktor.http.*
 import io.ktor.serialization.jackson.*
 import io.ktor.server.application.*
@@ -23,7 +23,6 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.routing.*
 
-
 fun main() {
     embeddedServer(Netty, port = 8080, host = "0.0.0.0", module = Application::module)
         .start(wait = true)
@@ -32,12 +31,17 @@ fun main() {
 fun Application.module() {
     println("Iniciando aplicación Spotify Clone API...")
 
-    // Configuración de base de datos
+    // Configuracion base de datos
     val dbUrl = environment.config.propertyOrNull("database.url")?.getString()
+        ?: System.getenv("DATABASE_URL")
         ?: "jdbc:postgresql://localhost:5432/spotify_db"
+
     val dbUser = environment.config.propertyOrNull("database.user")?.getString()
+        ?: System.getenv("DATABASE_USER")
         ?: "ktor_user"
+
     val dbPassword = environment.config.propertyOrNull("database.password")?.getString()
+        ?: System.getenv("DATABASE_PASSWORD")
         ?: "aplicacionesweb"
 
     DatabaseFactory.init(
@@ -48,28 +52,29 @@ fun Application.module() {
 
     println("Base de datos conectada: $dbUrl")
 
-    // ✅ OPCIÓN ALTERNATIVA: Si application.conf no se lee, configurar directamente
+    // Configuracion AWS S3
     val s3Service = try {
         S3Service(environment.config)
     } catch (e: Exception) {
         println("ADVERTENCIA: No se pudo leer s3.bucketName de application.conf")
-        println("Usando configuración por defecto...")
+        println("Intentando usar variables de entorno...")
 
-        // Crear configuración manual
+        val bucketName = System.getenv("S3_BUCKET_NAME") ?: "amzn-s3-mispotifyapi"
+        val region = System.getenv("AWS_REGION") ?: "us-east-1"
+
         val manualConfig = MapApplicationConfig(
-            "aws.region" to "us-east-1",
-            "s3.bucketName" to "amzn-s3-mispotifyapi"
+            "aws.region" to region,
+            "s3.bucketName" to bucketName
         )
         S3Service(manualConfig)
     }
     println("AWS S3 configurado")
 
-    // MODIFICACION: Inicializar repositorios para inyección
+    // Inicialización de repositorios y servicios
     val artistRepository = ArtistRepository
     val albumRepository = AlbumRepository
     val trackRepository = TrackRepository
 
-    // MODIFICACION: Pasar los repositorios al ContentService
     val contentService = ContentService(
         s3Service = s3Service,
         artistRepository = artistRepository,
@@ -77,6 +82,7 @@ fun Application.module() {
         trackRepository = trackRepository
     )
 
+    // Json Content Negotiation
     install(ContentNegotiation) {
         jackson {
             enable(SerializationFeature.INDENT_OUTPUT)
@@ -85,19 +91,39 @@ fun Application.module() {
     }
     println("Content Negotiation (JSON) configurado")
 
+    // CORS
     install(CORS) {
-        anyHost()
+        val allowedOrigins = System.getenv("ALLOWED_ORIGINS")?.split(",")
+            ?: listOf("*")
+
+        if (allowedOrigins.contains("*")) {
+            anyHost()
+        } else {
+            allowedOrigins.forEach { origin ->
+                allowHost(origin.trim(), schemes = listOf("http", "https"))
+            }
+        }
+
+        // Headers permitidos
         allowHeader(HttpHeaders.Authorization)
         allowHeader(HttpHeaders.ContentType)
+        allowHeader(HttpHeaders.AccessControlAllowOrigin)
+
+        // Métodos HTTP permitidos
         allowMethod(HttpMethod.Options)
         allowMethod(HttpMethod.Get)
         allowMethod(HttpMethod.Post)
         allowMethod(HttpMethod.Put)
         allowMethod(HttpMethod.Delete)
         allowMethod(HttpMethod.Patch)
-    }
-    println("CORS configurado")
 
+        allowCredentials = true
+
+        maxAgeInSeconds = 3600
+    }
+    println("CORS configurado (Origins: ${System.getenv("ALLOWED_ORIGINS") ?: "all"})")
+
+    // Autenticación JWT
     install(Authentication) {
         jwt("auth-jwt") {
             AuthService.configureJwt(this)
@@ -105,6 +131,7 @@ fun Application.module() {
     }
     println("Autenticación JWT configurada")
 
+    // Rutas
     routing {
         authRouting()
         contentRouting(contentService)
@@ -112,4 +139,5 @@ fun Application.module() {
     println("Rutas configuradas")
 
     println("Servidor iniciado en http://0.0.0.0:8080")
+    println("Health check disponible en: http://0.0.0.0:8080/health")
 }
