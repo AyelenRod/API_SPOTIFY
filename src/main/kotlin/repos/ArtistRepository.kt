@@ -2,6 +2,7 @@ package com.musicapp.repos
 
 import com.musicapp.database.DatabaseFactory.dbQuery
 import com.musicapp.database.Artists
+import com.musicapp.database.Albums // Necesario para verificar hijos
 import com.musicapp.models.Artist
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -14,7 +15,6 @@ object ArtistRepository {
         genre = row[Artists.genre]
     )
 
-    // CREATE
     suspend fun createArtist(name: String, genre: String): Artist = dbQuery {
         val newId = UUID.randomUUID()
         Artists.insert {
@@ -22,59 +22,36 @@ object ArtistRepository {
             it[Artists.name] = name
             it[Artists.genre] = genre
         }
-
         Artists.select { Artists.id eq newId }
             .map { resultRowToArtist(it) }
             .single()
     }
 
-    //READ - ARTISTA POR ID
     suspend fun getArtistById(id: UUID): Artist? = dbQuery {
-        Artists.selectAll()
-            .where { Artists.id eq id }
+        Artists.select { Artists.id eq id }
             .map { resultRowToArtist(it) }
             .singleOrNull()
     }
 
-    //READ - TODOS LOS ARTISTAS
     suspend fun getAllArtists(): List<Artist> = dbQuery {
-        Artists.selectAll()
-            .map { resultRowToArtist(it) }
+        Artists.selectAll().map { resultRowToArtist(it) }
     }
 
-    // UPDATE
-    suspend fun updateArtist(
-        id: UUID,
-        name: String? = null,
-        genre: String? = null
-    ): Boolean = dbQuery {
+    suspend fun updateArtist(id: UUID, name: String? = null, genre: String? = null): Boolean = dbQuery {
         val updateCount = Artists.update({ Artists.id eq id }) {
-            name?.let { value -> it[Artists.name] = value }
-            genre?.let { value -> it[Artists.genre] = value }
+            name?.let { v -> it[Artists.name] = v }
+            genre?.let { v -> it[Artists.genre] = v }
         }
         updateCount > 0
     }
 
-    // DELETE
     suspend fun deleteArtist(id: UUID): Boolean = dbQuery {
         Artists.deleteWhere { Artists.id eq id } > 0
     }
 
-    // VERIFICAR ALBUMNS ASOCIADOS
+    // VALIDACIÓN PARA PROTECCIÓN DE BORRADO
+    // Verificamos si existe algun album con este artistId
     suspend fun hasAlbums(id: UUID): Boolean = dbQuery {
-        val count = com.musicapp.database.Albums
-            .selectAll()
-            .where { com.musicapp.database.Albums.artistId eq id }
-            .count()
-        count > 0
-    }
-
-    // VERIFICAR TRACKS ASOCIADOS
-    suspend fun hasTracks(id: UUID): Boolean = dbQuery {
-        val count = com.musicapp.database.Tracks
-            .selectAll()
-            .where { com.musicapp.database.Tracks.artistId eq id }
-            .count()
-        count > 0
+        Albums.select { Albums.artistId eq id }.count() > 0
     }
 }

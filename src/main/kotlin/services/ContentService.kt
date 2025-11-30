@@ -6,7 +6,7 @@ import com.musicapp.models.Track
 import com.musicapp.repos.AlbumRepository
 import com.musicapp.repos.ArtistRepository
 import com.musicapp.repos.TrackRepository
-import java.util.*
+import java.util.UUID
 
 class ContentService(
     private val artistRepository: ArtistRepository,
@@ -14,195 +14,132 @@ class ContentService(
     private val trackRepository: TrackRepository
 ) {
 
-    // ARTISTAS
+    // =========================================================================
+    // SECCIÓN DE ARTISTAS
+    // =========================================================================
 
-    // CREAR ARTISTA
     suspend fun createArtist(name: String, genre: String): Artist {
-        return artistRepository.createArtist(
-            name = name,
-            genre = genre,
-            imageUrl = ""
-        )
+        return artistRepository.createArtist(name = name, genre = genre)
     }
 
-    // OBTENER ARTISTA POR ID
     suspend fun getArtistById(id: String): Artist? {
-        val artistUUID = try {
-            UUID.fromString(id)
-        } catch (e: IllegalArgumentException) {
-            throw IllegalArgumentException("Invalid UUID format for artist ID")
-        }
+        val artistUUID = parseUUID(id) ?: throw IllegalArgumentException("ID de artista inválido")
         return artistRepository.getArtistById(artistUUID)
     }
 
-    // OBTENER TODOS LOS ARTISTAS
-    suspend fun getAllArtists(): List<Artist> {
-        return artistRepository.getAllArtists()
-    }
+    suspend fun getAllArtists(): List<Artist> = artistRepository.getAllArtists()
 
-    // ACTUALIZAR ARTISTA
-    suspend fun updateArtist(
-        id: String,
-        name: String? = null,
-        genre: String? = null
-    ): Artist? {
-        val artistUUID = UUID.fromString(id)
+    suspend fun updateArtist(id: String, name: String? = null, genre: String? = null): Artist? {
+        val artistUUID = parseUUID(id) ?: return null
 
-        val existingArtist = artistRepository.getArtistById(artistUUID)
-            ?: return null
+        // Verificamos que exista antes de actualizar
+        artistRepository.getArtistById(artistUUID) ?: return null
 
-        val updated = artistRepository.updateArtist(
-            id = artistUUID,
-            name = name,
-            genre = genre,
-        )
-
+        val updated = artistRepository.updateArtist(id = artistUUID, name = name, genre = genre)
         return if (updated) artistRepository.getArtistById(artistUUID) else null
     }
 
-    // ELIMINAR ARTISTA
     suspend fun deleteArtist(id: String): Boolean {
-        val artistUUID = UUID.fromString(id)
+        val artistUUID = parseUUID(id) ?: return false
 
+        // PROTECCIÓN CONTRA BORRADO EN CASCADA
+        // Si el artista tiene álbumes, impedimos el borrado.
         if (artistRepository.hasAlbums(artistUUID)) {
-            throw IllegalStateException("Cannot delete artist with albums")
-        }
-        if (artistRepository.hasTracks(artistUUID)) {
-            throw IllegalStateException("Cannot delete artist with tracks")
+            throw IllegalStateException("No se puede eliminar el artista porque tiene álbumes asociados.")
         }
 
         return artistRepository.deleteArtist(artistUUID)
     }
 
-    // ALBUMES
+    // =========================================================================
+    // SECCIÓN DE ÁLBUMES
+    // =========================================================================
 
-    // CREAR ÁLBUM
-    suspend fun createAlbum(
-        title: String,
-        artistId: String,
-        releaseYear: Int
-    ): Album {
-        val artistUUID = UUID.fromString(artistId)
+    suspend fun createAlbum(title: String, artistId: String, releaseYear: Int): Album {
+        val artistUUID = parseUUID(artistId) ?: throw IllegalArgumentException("ID de artista inválido")
 
-        artistRepository.getArtistById(artistUUID)
-            ?: throw IllegalArgumentException("Artist not found")
+        // Verificamos que el artista exista (Integridad referencial)
+        if (artistRepository.getArtistById(artistUUID) == null) {
+            throw IllegalArgumentException("El artista especificado no existe")
+        }
 
-        return albumRepository.createAlbum(
-            name = title,
-            artistId = artistUUID,
-            year = releaseYear,
-            albumArtUrl = ""
-        )
+        return albumRepository.createAlbum(name = title, artistId = artistUUID, year = releaseYear)
     }
 
-    //OBTENER ÁLBUM POR ID
     suspend fun getAlbumById(id: String): Album? {
-        val albumUUID = try {
-            UUID.fromString(id)
-        } catch (e: IllegalArgumentException) {
-            throw IllegalArgumentException("Invalid UUID format for album ID")
-        }
+        val albumUUID = parseUUID(id) ?: throw IllegalArgumentException("ID de álbum inválido")
         return albumRepository.getAlbumById(albumUUID)
     }
 
-    //OBTENER TODOS LOS ÁLBUMES
-    suspend fun getAllAlbums(): List<Album> {
-        return albumRepository.getAllAlbums()
-    }
+    suspend fun getAllAlbums(): List<Album> = albumRepository.getAllAlbums()
 
-    // ACTUALIZAR ÁLBUM
-    suspend fun updateAlbum(
-        id: String,
-        title: String? = null,
-        releaseYear: Int? = null
-    ): Album? {
-        val albumUUID = UUID.fromString(id)
+    suspend fun updateAlbum(id: String, title: String? = null, releaseYear: Int? = null): Album? {
+        val albumUUID = parseUUID(id) ?: return null
 
-        val existingAlbum = albumRepository.getAlbumById(albumUUID)
-            ?: return null
+        albumRepository.getAlbumById(albumUUID) ?: return null
 
-        val updated = albumRepository.updateAlbum(
-            id = albumUUID,
-            name = title,
-            year = releaseYear,
-        )
-
+        val updated = albumRepository.updateAlbum(id = albumUUID, name = title, year = releaseYear)
         return if (updated) albumRepository.getAlbumById(albumUUID) else null
     }
 
-    // ELIMINAR ÁLBUM
     suspend fun deleteAlbum(id: String): Boolean {
-        val albumUUID = UUID.fromString(id)
+        val albumUUID = parseUUID(id) ?: return false
 
+        // PROTECCIÓN CONTRA BORRADO EN CASCADA
+        // Si el álbum tiene canciones (tracks), impedimos el borrado.
         if (albumRepository.hasTracks(albumUUID)) {
-            throw IllegalStateException("Cannot delete album with tracks")
+            throw IllegalStateException("No se puede eliminar el álbum porque tiene canciones asociadas.")
         }
 
         return albumRepository.deleteAlbum(albumUUID)
     }
 
-    // TRACKS
+    // =========================================================================
+    // SECCIÓN DE TRACKS (CANCIONES)
+    // =========================================================================
 
-    // CREAR TRACK
-    suspend fun createTrack(
-        title: String,
-        albumId: String,
-        duration: Long
-    ): Track {
-        val albumUUID = UUID.fromString(albumId)
+    suspend fun createTrack(title: String, albumId: String, duration: Long): Track {
+        val albumUUID = parseUUID(albumId) ?: throw IllegalArgumentException("ID de álbum inválido")
 
-        val album = albumRepository.getAlbumById(albumUUID)
-            ?: throw IllegalArgumentException("Album not found")
+        // Verificamos que el álbum exista
+        if (albumRepository.getAlbumById(albumUUID) == null) {
+            throw IllegalArgumentException("El álbum especificado no existe")
+        }
 
-        val artistId = album.artistId
-
-        return trackRepository.createTrack(
-            name = title,
-            albumId = albumUUID,
-            duration = duration,
-            artistId = artistId,
-            previewUrl = ""
-        )
+        // Creamos el track vinculado al álbum
+        return trackRepository.createTrack(name = title, albumId = albumUUID, duration = duration)
     }
 
-    // OBTENER TRACK POR ID
     suspend fun getTrackById(id: String): Track? {
-        val trackUUID = try {
-            UUID.fromString(id)
-        } catch (e: IllegalArgumentException) {
-            throw IllegalArgumentException("Invalid UUID format for track ID")
-        }
+        val trackUUID = parseUUID(id) ?: throw IllegalArgumentException("ID de track inválido")
         return trackRepository.getTrackById(trackUUID)
     }
 
-    // OBTENER TODOS LOS TRACKS
-    suspend fun getAllTracks(): List<Track> {
-        return trackRepository.getAllTracks()
-    }
+    suspend fun getAllTracks(): List<Track> = trackRepository.getAllTracks()
 
-    // ACTUALIZAR TRACK
-    suspend fun updateTrack(
-        id: String,
-        title: String? = null,
-        duration: Long? = null
-    ): Track? {
-        val trackUUID = UUID.fromString(id)
+    suspend fun updateTrack(id: String, title: String? = null, duration: Long? = null): Track? {
+        val trackUUID = parseUUID(id) ?: return null
 
-        val existingTrack = trackRepository.getTrackById(trackUUID)
-            ?: return null
+        trackRepository.getTrackById(trackUUID) ?: return null
 
-        val updated = trackRepository.updateTrack(
-            id = trackUUID,
-            name = title,
-            duration = duration,
-        )
-
+        val updated = trackRepository.updateTrack(id = trackUUID, name = title, duration = duration)
         return if (updated) trackRepository.getTrackById(trackUUID) else null
     }
 
-    // ELIMINAR TRACK
     suspend fun deleteTrack(id: String): Boolean {
-        val trackUUID = UUID.fromString(id)
+        val trackUUID = parseUUID(id) ?: return false
         return trackRepository.deleteTrack(trackUUID)
+    }
+
+    // =========================================================================
+    // UTILIDADES
+    // =========================================================================
+
+    private fun parseUUID(id: String): UUID? {
+        return try {
+            UUID.fromString(id)
+        } catch (e: IllegalArgumentException) {
+            null
+        }
     }
 }

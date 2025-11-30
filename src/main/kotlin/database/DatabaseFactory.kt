@@ -31,7 +31,7 @@ object DatabaseFactory {
         Database.connect(dataSource)
 
         transaction {
-            SchemaUtils.create(Users, Artists, Albums, Tracks)
+            SchemaUtils.create(Artists, Albums, Tracks)
         }
 
         println("Base de datos inicializada correctamente")
