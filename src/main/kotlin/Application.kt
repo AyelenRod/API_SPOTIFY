@@ -6,6 +6,7 @@ import com.musicapp.auth.AuthService
 import com.musicapp.database.DatabaseFactory
 import com.musicapp.routes.authRouting
 import com.musicapp.routes.contentRouting
+import com.musicapp.routes.ContentRouting
 import com.musicapp.services.ContentService
 import com.musicapp.services.S3Service
 import com.musicapp.repos.ArtistRepository
@@ -70,13 +71,21 @@ fun Application.module() {
     }
     println("AWS S3 configurado")
 
-    // Inicialización de repositorios y servicios
+    // Inicialización de repositorios
     val artistRepository = ArtistRepository
     val albumRepository = AlbumRepository
     val trackRepository = TrackRepository
 
+    // Servicio completo con archivos (S3)
     val contentService = ContentService(
         s3Service = s3Service,
+        artistRepository = artistRepository,
+        albumRepository = albumRepository,
+        trackRepository = trackRepository
+    )
+
+    // Servicio
+    val ContentService = ContentService(
         artistRepository = artistRepository,
         albumRepository = albumRepository,
         trackRepository = trackRepository
@@ -133,11 +142,17 @@ fun Application.module() {
 
     // Rutas
     routing {
+        // Rutas de autenticación
         authRouting()
+
+        // RUTAS SIMPLIFICADAS
+        ContentRouting(ContentService)
+
+        // RUTAS COMPLETAS
         contentRouting(contentService)
     }
-    println("Rutas configuradas")
 
     println("Servidor iniciado en http://0.0.0.0:8080")
     println("Health check disponible en: http://0.0.0.0:8080/health")
 }
+
