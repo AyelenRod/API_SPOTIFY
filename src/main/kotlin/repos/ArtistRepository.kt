@@ -11,22 +11,19 @@ object ArtistRepository {
     private fun resultRowToArtist(row: ResultRow) = Artist(
         id = row[Artists.id],
         name = row[Artists.name],
-        genre = row[Artists.genre],
-        image = row[Artists.image]
+        genre = row[Artists.genre]
     )
 
     // CREATE
-    suspend fun createArtist(name: String, genre: String, imageUrl: String): Artist = dbQuery {
+    suspend fun createArtist(name: String, genre: String): Artist = dbQuery {
         val newId = UUID.randomUUID()
         Artists.insert {
             it[id] = newId
             it[Artists.name] = name
             it[Artists.genre] = genre
-            it[image] = imageUrl
         }
 
-        Artists.selectAll()
-            .where { Artists.id eq newId }
+        Artists.select { Artists.id eq newId }
             .map { resultRowToArtist(it) }
             .single()
     }
@@ -49,13 +46,11 @@ object ArtistRepository {
     suspend fun updateArtist(
         id: UUID,
         name: String? = null,
-        genre: String? = null,
-        imageUrl: String? = null
+        genre: String? = null
     ): Boolean = dbQuery {
         val updateCount = Artists.update({ Artists.id eq id }) {
             name?.let { value -> it[Artists.name] = value }
             genre?.let { value -> it[Artists.genre] = value }
-            imageUrl?.let { value -> it[image] = value }
         }
         updateCount > 0
     }

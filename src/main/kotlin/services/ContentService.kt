@@ -20,7 +20,8 @@ class ContentService(
     suspend fun createArtist(name: String, genre: String): Artist {
         return artistRepository.createArtist(
             name = name,
-            genre = genre
+            genre = genre,
+            imageUrl = ""
         )
     }
 
@@ -90,6 +91,7 @@ class ContentService(
             name = title,
             artistId = artistUUID,
             year = releaseYear,
+            albumArtUrl = ""
         )
     }
 
@@ -158,7 +160,8 @@ class ContentService(
             name = title,
             albumId = albumUUID,
             duration = duration,
-            artistId = artistId
+            artistId = artistId,
+            previewUrl = ""
         )
     }
 

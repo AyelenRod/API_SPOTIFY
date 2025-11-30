@@ -8,7 +8,6 @@ import com.musicapp.routes.authRouting
 import com.musicapp.routes.contentRouting
 import com.musicapp.routes.ContentRouting
 import com.musicapp.services.ContentService
-import com.musicapp.services.S3Service
 import com.musicapp.repos.ArtistRepository
 import com.musicapp.repos.AlbumRepository
 import com.musicapp.repos.TrackRepository
