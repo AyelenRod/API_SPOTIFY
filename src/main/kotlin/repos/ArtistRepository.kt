@@ -44,16 +44,18 @@ object ArtistRepository {
             genre?.let { v -> it[Artists.genre] = v }
         }
         updateCount > 0
-    }
 
+    }
     suspend fun deleteArtist(id: UUID): Boolean = dbQuery {
         try {
             Artists.deleteWhere { Artists.id eq id } > 0
         } catch (e: ExposedSQLException) {
-            throw IllegalStateException("No se puede borrar el artista: tiene álbumes asociados.")
+            println("ERROR SQL REAL: ${e.message}")
+            e.printStackTrace()
+
+            throw IllegalStateException("Error de Base de Datos: ${e.message}")
         }
     }
-
     suspend fun hasAlbums(id: UUID): Boolean = dbQuery {
         Albums.selectAll().where { Albums.artistId eq id }.count() > 0
     }
