@@ -6,10 +6,10 @@ import com.musicapp.database.Artists
 import com.musicapp.database.Tracks
 import com.musicapp.models.Track
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import java.util.*
 
 object TrackRepository {
-
     private fun resultRowToTrack(row: ResultRow) = Track(
         id = row[Tracks.id],
         name = row[Tracks.name],
@@ -19,7 +19,7 @@ object TrackRepository {
         artistId = row[Tracks.artistId]
     )
 
-    // Crea un nuevo track en la base de datos.
+    // CREATE
     suspend fun createTrack(
         name: String,
         albumId: UUID,
@@ -43,7 +43,7 @@ object TrackRepository {
             .single()
     }
 
-    // Obtiene un track por su ID.
+    // READ - TRACK POR ID
     suspend fun getTrackById(id: UUID): Track? = dbQuery {
         Tracks.selectAll()
             .where { Tracks.id eq id }
@@ -51,13 +51,27 @@ object TrackRepository {
             .singleOrNull()
     }
 
-    // Obtiene todos los tracks de la base de datos.
+    // READ - TODOS LOS TRACKS
     suspend fun getAllTracks(): List<Track> = dbQuery {
         Tracks.selectAll()
             .map { resultRowToTrack(it) }
     }
 
-    // Busca tracks por nombre, artista o álbum.
+    // READ - TRACKS POR ÁLBUM
+    suspend fun getTracksByAlbum(albumId: UUID): List<Track> = dbQuery {
+        Tracks.selectAll()
+            .where { Tracks.albumId eq albumId }
+            .map { resultRowToTrack(it) }
+    }
+
+    // READ - TRACKS POR ARTISTA
+    suspend fun getTracksByArtist(artistId: UUID): List<Track> = dbQuery {
+        Tracks.selectAll()
+            .where { Tracks.artistId eq artistId }
+            .map { resultRowToTrack(it) }
+    }
+
+    // READ - BÚSQUEDA DE TRACKS POR NOMBRE, ARTISTA O ÁLBUM
     suspend fun searchTracksByName(query: String): List<Track> = dbQuery {
         val q = query.lowercase()
         (Tracks innerJoin Artists innerJoin Albums)
@@ -68,5 +82,25 @@ object TrackRepository {
                         (Albums.name.lowerCase() like "%$q%")
             }
             .map { resultRowToTrack(it) }
+    }
+
+    // UPDATE - ACTUALIZA UN TRACK
+    suspend fun updateTrack(
+        id: UUID,
+        name: String? = null,
+        duration: Long? = null,
+        previewUrl: String? = null
+    ): Boolean = dbQuery {
+        val updateCount = Tracks.update({ Tracks.id eq id }) {
+            name?.let { value -> it[Tracks.name] = value }
+            duration?.let { value -> it[Tracks.duration] = value }
+            previewUrl?.let { value -> it[Tracks.previewUrl] = value }
+        }
+        updateCount > 0
+    }
+
+    // DELETE
+    suspend fun deleteTrack(id: UUID): Boolean = dbQuery {
+        Tracks.deleteWhere { Tracks.id eq id } > 0
     }
 }
