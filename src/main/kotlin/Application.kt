@@ -37,7 +37,7 @@ fun Application.module() {
 
     val dbPassword = environment.config.propertyOrNull("database.password")?.getString()
         ?: System.getenv("DATABASE_PASSWORD")
-        ?: "password"
+        ?: "cacho"
 
     DatabaseFactory.init(
         jdbcUrl = dbUrl,
@@ -45,7 +45,7 @@ fun Application.module() {
         password = dbPassword
     )
 
-    // 2. Inicialización de Servicios
+    // Inicialización de Servicios
     val artistRepository = ArtistRepository
     val albumRepository = AlbumRepository
     val trackRepository = TrackRepository
@@ -56,7 +56,7 @@ fun Application.module() {
         trackRepository = trackRepository
     )
 
-    // 3. Plugins Ktor
+    // Plugins Ktor
     install(ContentNegotiation) {
         jackson {
             enable(SerializationFeature.INDENT_OUTPUT)
@@ -65,7 +65,7 @@ fun Application.module() {
     }
 
     install(CORS) {
-        anyHost() // Desarrollo: permitir todo. En prod, especificar dominios.
+        anyHost()
         allowHeader(HttpHeaders.ContentType)
         allowMethod(HttpMethod.Options)
         allowMethod(HttpMethod.Get)
@@ -74,14 +74,14 @@ fun Application.module() {
         allowMethod(HttpMethod.Delete)
     }
 
-    // 4. Rutas
+    // Rutas
     routing {
         // Ruta de chequeo de salud
         get("/health") {
             call.respond(HttpStatusCode.OK, "API funcionando correctamente")
         }
 
-        // Rutas de contenido (Artistas, Albumes, Tracks)
+        // Rutas de contenido
         ContentRouting(contentService)
     }
 

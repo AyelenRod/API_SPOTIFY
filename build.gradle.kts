@@ -1,5 +1,3 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-
 plugins {
     kotlin("jvm") version "2.0.21"
     id("io.ktor.plugin") version "3.0.3"
@@ -29,46 +27,30 @@ dependencies {
     implementation("io.ktor:ktor-server-core-jvm:3.0.3")
     implementation("io.ktor:ktor-server-netty-jvm:3.0.3")
 
-    // SERIALIZACIÓN JSON
+    // SERIALIZACIÓN JSON (Jackson)
     implementation("io.ktor:ktor-serialization-jackson-jvm:3.0.3")
     implementation("io.ktor:ktor-server-content-negotiation-jvm:3.0.3")
-
-    // SEGURIDAD Y AUTENTICACIÓN
-    implementation("io.ktor:ktor-server-auth-jvm:3.0.3")
-    implementation("io.ktor:ktor-server-auth-jwt-jvm:3.0.3")
 
     // CORS
     implementation("io.ktor:ktor-server-cors-jvm:3.0.3")
 
-    // STATUS PAGES
-    implementation("io.ktor:ktor-server-status-pages-jvm:3.0.3")
-
-    // AWS SDK
-    implementation("aws.sdk.kotlin:s3:1.3.79")
-    implementation("aws.sdk.kotlin:aws-core:1.3.79")
-    implementation("aws.smithy.kotlin:http-client-engine-crt:1.3.25")
-
-    // BASE DE DATOS - PostgreSQL
+    // BASE DE DATOS - PostgreSQL Driver
     implementation("org.postgresql:postgresql:42.7.4")
 
     // HikariCP - Pool de conexiones
     implementation("com.zaxxer:HikariCP:6.2.1")
 
-    // Exposed ORM
+    // Exposed ORM (Manejo de SQL en Kotlin)
     implementation("org.jetbrains.exposed:exposed-core:0.57.0")
     implementation("org.jetbrains.exposed:exposed-dao:0.57.0")
     implementation("org.jetbrains.exposed:exposed-jdbc:0.57.0")
     implementation("org.jetbrains.exposed:exposed-java-time:0.57.0")
 
-    // BCRYPT
-    implementation("org.mindrot:jbcrypt:0.4")
-
-    // LOGGING
+    // LOGGING (Necesario para ver logs de Ktor y SQL)
     implementation("ch.qos.logback:logback-classic:1.5.12")
     implementation("org.slf4j:slf4j-api:2.0.16")
 
     // TESTING
-    // ✅ CORREGIDO: Usar test-host en lugar de tests
     testImplementation("io.ktor:ktor-server-test-host-jvm:3.0.3")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")

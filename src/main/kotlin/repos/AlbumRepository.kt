@@ -1,12 +1,13 @@
 package com.musicapp.repos
 
 import com.musicapp.database.Albums
-import com.musicapp.database.Tracks // Necesario para verificar hijos
+import com.musicapp.database.Tracks
 import com.musicapp.database.DatabaseFactory.dbQuery
 import com.musicapp.models.Album
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import java.util.*
+import org.jetbrains.exposed.exceptions.ExposedSQLException
 
 object AlbumRepository {
     private fun resultRowToAlbum(row: ResultRow) = Album(
@@ -20,17 +21,19 @@ object AlbumRepository {
         val newId = UUID.randomUUID()
         Albums.insert {
             it[id] = newId
-            it[Albums.name] = name // Recuerda: Table usa 'title' internamente
+            it[Albums.name] = name
             it[Albums.artistId] = artistId
             it[Albums.year] = year
         }
-        Albums.select { Albums.id eq newId }
+        Albums.selectAll().where { Albums.id eq newId }
             .map { resultRowToAlbum(it) }
             .single()
     }
 
     suspend fun getAlbumById(id: UUID): Album? = dbQuery {
-        Albums.select { Albums.id eq id }.map { resultRowToAlbum(it) }.singleOrNull()
+        Albums.selectAll().where { Albums.id eq id }
+            .map { resultRowToAlbum(it) }
+            .singleOrNull()
     }
 
     suspend fun getAllAlbums(): List<Album> = dbQuery {
@@ -46,11 +49,15 @@ object AlbumRepository {
     }
 
     suspend fun deleteAlbum(id: UUID): Boolean = dbQuery {
-        Albums.deleteWhere { Albums.id eq id } > 0
+        try {
+            Albums.deleteWhere { Albums.id eq id } > 0
+        } catch (e: ExposedSQLException) {
+            throw IllegalStateException("No se puede borrar el álbum: tiene canciones asociadas.")
+        }
     }
 
-    // VALIDACIÓN PARA PROTECCIÓN DE BORRADO
+    // Metodo auxiliar
     suspend fun hasTracks(id: UUID): Boolean = dbQuery {
-        Tracks.select { Tracks.albumId eq id }.count() > 0
+        Tracks.selectAll().where { Tracks.albumId eq id }.count() > 0
     }
 }

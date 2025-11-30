@@ -14,10 +14,7 @@ class ContentService(
     private val trackRepository: TrackRepository
 ) {
 
-    // =========================================================================
-    // SECCIÓN DE ARTISTAS
-    // =========================================================================
-
+    //ARTISTAS
     suspend fun createArtist(name: String, genre: String): Artist {
         return artistRepository.createArtist(name = name, genre = genre)
     }
@@ -32,7 +29,6 @@ class ContentService(
     suspend fun updateArtist(id: String, name: String? = null, genre: String? = null): Artist? {
         val artistUUID = parseUUID(id) ?: return null
 
-        // Verificamos que exista antes de actualizar
         artistRepository.getArtistById(artistUUID) ?: return null
 
         val updated = artistRepository.updateArtist(id = artistUUID, name = name, genre = genre)
@@ -43,7 +39,6 @@ class ContentService(
         val artistUUID = parseUUID(id) ?: return false
 
         // PROTECCIÓN CONTRA BORRADO EN CASCADA
-        // Si el artista tiene álbumes, impedimos el borrado.
         if (artistRepository.hasAlbums(artistUUID)) {
             throw IllegalStateException("No se puede eliminar el artista porque tiene álbumes asociados.")
         }
@@ -51,14 +46,10 @@ class ContentService(
         return artistRepository.deleteArtist(artistUUID)
     }
 
-    // =========================================================================
-    // SECCIÓN DE ÁLBUMES
-    // =========================================================================
-
+   //ALBUMS
     suspend fun createAlbum(title: String, artistId: String, releaseYear: Int): Album {
         val artistUUID = parseUUID(artistId) ?: throw IllegalArgumentException("ID de artista inválido")
 
-        // Verificamos que el artista exista (Integridad referencial)
         if (artistRepository.getArtistById(artistUUID) == null) {
             throw IllegalArgumentException("El artista especificado no existe")
         }
@@ -86,7 +77,6 @@ class ContentService(
         val albumUUID = parseUUID(id) ?: return false
 
         // PROTECCIÓN CONTRA BORRADO EN CASCADA
-        // Si el álbum tiene canciones (tracks), impedimos el borrado.
         if (albumRepository.hasTracks(albumUUID)) {
             throw IllegalStateException("No se puede eliminar el álbum porque tiene canciones asociadas.")
         }
@@ -94,19 +84,14 @@ class ContentService(
         return albumRepository.deleteAlbum(albumUUID)
     }
 
-    // =========================================================================
-    // SECCIÓN DE TRACKS (CANCIONES)
-    // =========================================================================
-
+    //TRACKS
     suspend fun createTrack(title: String, albumId: String, duration: Long): Track {
         val albumUUID = parseUUID(albumId) ?: throw IllegalArgumentException("ID de álbum inválido")
 
-        // Verificamos que el álbum exista
         if (albumRepository.getAlbumById(albumUUID) == null) {
             throw IllegalArgumentException("El álbum especificado no existe")
         }
 
-        // Creamos el track vinculado al álbum
         return trackRepository.createTrack(name = title, albumId = albumUUID, duration = duration)
     }
 
@@ -131,10 +116,7 @@ class ContentService(
         return trackRepository.deleteTrack(trackUUID)
     }
 
-    // =========================================================================
-    // UTILIDADES
-    // =========================================================================
-
+    // UTILS
     private fun parseUUID(id: String): UUID? {
         return try {
             UUID.fromString(id)

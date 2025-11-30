@@ -11,10 +11,10 @@ object TrackRepository {
     private fun resultRowToTrack(row: ResultRow) = Track(
         id = row[Tracks.id],
         name = row[Tracks.name],
-        duration = row[Tracks.duration].toLong(),
-        albumId = row[Tracks.albumId]
+        albumId = row[Tracks.albumId],
+        duration = row[Tracks.duration].toLong()
     )
-    // Eliminado artistId de los parámetros
+
     suspend fun createTrack(name: String, albumId: UUID, duration: Long): Track = dbQuery {
         val newId = UUID.randomUUID()
         Tracks.insert {
@@ -23,24 +23,22 @@ object TrackRepository {
             it[Tracks.albumId] = albumId
             it[Tracks.duration] = duration.toInt()
         }
-        Tracks.select { Tracks.id eq newId }
+        Tracks.selectAll().where { Tracks.id eq newId }
             .map { resultRowToTrack(it) }
             .single()
     }
 
     suspend fun getTrackById(id: UUID): Track? = dbQuery {
-        Tracks.select { Tracks.id eq id }.map { resultRowToTrack(it) }.singleOrNull()
+        Tracks.selectAll().where { Tracks.id eq id }
+            .map { resultRowToTrack(it) }
+            .singleOrNull()
     }
 
     suspend fun getAllTracks(): List<Track> = dbQuery {
         Tracks.selectAll().map { resultRowToTrack(it) }
     }
 
-    suspend fun updateTrack(
-        id: UUID,
-        name: String? = null,
-        duration: Long? = null
-    ): Boolean = dbQuery {
+    suspend fun updateTrack(id: UUID, name: String? = null, duration: Long? = null): Boolean = dbQuery {
         val updateCount = Tracks.update({ Tracks.id eq id }) {
             name?.let { v -> it[Tracks.name] = v }
             duration?.let { v -> it[Tracks.duration] = v.toInt() }

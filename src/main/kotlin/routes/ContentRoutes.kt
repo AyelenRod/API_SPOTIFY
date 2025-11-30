@@ -11,7 +11,7 @@ fun Route.ContentRouting(service: ContentService) {
 
     // ARTISTAS
 
-    // POST /artistas - Crear artista (JSON simple)
+    // POST /artistas
     post("/artistas") {
         try {
             val request = call.receive<Map<String, String>>()
@@ -31,7 +31,7 @@ fun Route.ContentRouting(service: ContentService) {
         }
     }
 
-    // GET /artistas - Listar todos los artistas
+    // GET /artistas
     get("/artistas") {
         try {
             val artists = service.getAllArtists()
@@ -43,7 +43,7 @@ fun Route.ContentRouting(service: ContentService) {
         }
     }
 
-    // GET /artistas/{id} - Obtener un artista por ID
+    // GET /artistas/{id}
     get("/artistas/{id}") {
         val artistId = call.parameters["id"]
             ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing artist ID")
@@ -66,7 +66,7 @@ fun Route.ContentRouting(service: ContentService) {
         }
     }
 
-    // PUT /artistas/{id} - Actualizar artista
+    // PUT /artistas/{id}
     put("/artistas/{id}") {
         val artistId = call.parameters["id"]
             ?: return@put call.respond(HttpStatusCode.BadRequest, "Missing artist ID")
@@ -90,7 +90,7 @@ fun Route.ContentRouting(service: ContentService) {
         }
     }
 
-    // DELETE /artistas/{id} - Eliminar artista
+    // DELETE /artistas/{id}
     delete("/artistas/{id}") {
         val artistId = call.parameters["id"]
             ?: return@delete call.respond(HttpStatusCode.BadRequest, "Missing artist ID")
@@ -115,7 +115,7 @@ fun Route.ContentRouting(service: ContentService) {
 
     // ALBUMES
 
-    // POST /albumes - Crear álbum
+    // POST /albumes
     post("/albumes") {
         try {
             val request = call.receive<Map<String, Any>>()
@@ -126,8 +126,6 @@ fun Route.ContentRouting(service: ContentService) {
                 ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing 'releaseYear' field")
             val artistId = request["artistId"]?.toString()
                 ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing 'artistId' field")
-
-            // Crea álbum sin imagen (URL por defecto)
             val newAlbum = service.createAlbum(title, artistId, releaseYear)
 
             call.respond(HttpStatusCode.Created, newAlbum)
@@ -138,7 +136,7 @@ fun Route.ContentRouting(service: ContentService) {
         }
     }
 
-    // GET /albumes - Listar todos los álbumes
+    // GET /albumes
     get("/albumes") {
         try {
             val albums = service.getAllAlbums()
@@ -150,7 +148,7 @@ fun Route.ContentRouting(service: ContentService) {
         }
     }
 
-    // GET /albumes/{id} - Obtener un álbum por ID
+    // GET /albumes/{id}
     get("/albumes/{id}") {
         val albumId = call.parameters["id"]
             ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing album ID")
@@ -173,7 +171,7 @@ fun Route.ContentRouting(service: ContentService) {
         }
     }
 
-    // PUT /albumes/{id} - Actualizar álbum
+    // PUT /albumes/{id}
     put("/albumes/{id}") {
         val albumId = call.parameters["id"]
             ?: return@put call.respond(HttpStatusCode.BadRequest, "Missing album ID")
@@ -197,7 +195,7 @@ fun Route.ContentRouting(service: ContentService) {
         }
     }
 
-    // DELETE /albumes/{id} - Eliminar álbum
+    // DELETE /albumes/{id}
     delete("/albumes/{id}") {
         val albumId = call.parameters["id"]
             ?: return@delete call.respond(HttpStatusCode.BadRequest, "Missing album ID")
@@ -222,7 +220,7 @@ fun Route.ContentRouting(service: ContentService) {
 
     //TRACKS
 
-    // POST /tracks - Crear track
+    // POST /tracks
     post("/tracks") {
         try {
             val request = call.receive<Map<String, Any>>()
@@ -233,8 +231,6 @@ fun Route.ContentRouting(service: ContentService) {
                 ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing 'duration' field")
             val albumId = request["albumId"]?.toString()
                 ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing 'albumId' field")
-
-            // Crea track sin audio (URL por defecto)
             val newTrack = service.createTrack(title, albumId, duration)
 
             call.respond(HttpStatusCode.Created, newTrack)
@@ -245,7 +241,7 @@ fun Route.ContentRouting(service: ContentService) {
         }
     }
 
-    // GET /tracks - Listar todos los tracks
+    // GET /tracks
     get("/tracks") {
         try {
             val tracks = service.getAllTracks()
@@ -257,7 +253,7 @@ fun Route.ContentRouting(service: ContentService) {
         }
     }
 
-    // GET /tracks/{id} - Obtener un track por ID
+    // GET /tracks/{id}
     get("/tracks/{id}") {
         val trackId = call.parameters["id"]
             ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing track ID")
@@ -280,7 +276,7 @@ fun Route.ContentRouting(service: ContentService) {
         }
     }
 
-    // PUT /tracks/{id} - Actualizar track
+    // PUT /tracks/{id}
     put("/tracks/{id}") {
         val trackId = call.parameters["id"]
             ?: return@put call.respond(HttpStatusCode.BadRequest, "Missing track ID")
@@ -304,7 +300,7 @@ fun Route.ContentRouting(service: ContentService) {
         }
     }
 
-    // DELETE /tracks/{id} - Eliminar track
+    // DELETE /tracks/{id}
     delete("/tracks/{id}") {
         val trackId = call.parameters["id"]
             ?: return@delete call.respond(HttpStatusCode.BadRequest, "Missing track ID")

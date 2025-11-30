@@ -2,11 +2,12 @@ package com.musicapp.repos
 
 import com.musicapp.database.DatabaseFactory.dbQuery
 import com.musicapp.database.Artists
-import com.musicapp.database.Albums // Necesario para verificar hijos
+import com.musicapp.database.Albums
 import com.musicapp.models.Artist
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import java.util.*
+import org.jetbrains.exposed.exceptions.ExposedSQLException
 
 object ArtistRepository {
     private fun resultRowToArtist(row: ResultRow) = Artist(
@@ -22,13 +23,13 @@ object ArtistRepository {
             it[Artists.name] = name
             it[Artists.genre] = genre
         }
-        Artists.select { Artists.id eq newId }
+        Artists.selectAll().where { Artists.id eq newId }
             .map { resultRowToArtist(it) }
             .single()
     }
 
     suspend fun getArtistById(id: UUID): Artist? = dbQuery {
-        Artists.select { Artists.id eq id }
+        Artists.selectAll().where { Artists.id eq id }
             .map { resultRowToArtist(it) }
             .singleOrNull()
     }
@@ -46,12 +47,14 @@ object ArtistRepository {
     }
 
     suspend fun deleteArtist(id: UUID): Boolean = dbQuery {
-        Artists.deleteWhere { Artists.id eq id } > 0
+        try {
+            Artists.deleteWhere { Artists.id eq id } > 0
+        } catch (e: ExposedSQLException) {
+            throw IllegalStateException("No se puede borrar el artista: tiene álbumes asociados.")
+        }
     }
 
-    // VALIDACIÓN PARA PROTECCIÓN DE BORRADO
-    // Verificamos si existe algun album con este artistId
     suspend fun hasAlbums(id: UUID): Boolean = dbQuery {
-        Albums.select { Albums.artistId eq id }.count() > 0
+        Albums.selectAll().where { Albums.artistId eq id }.count() > 0
     }
 }
